@@ -45,7 +45,7 @@ resource "aws_api_gateway_rest_api" "minecraft" {
 
 data "aws_iam_policy_document" "allow-from-ip" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["execute-api:Invoke"]
     principals {
       identifiers = ["*"]
@@ -67,3 +67,17 @@ resource "aws_api_gateway_rest_api_policy" "storage_list" {
 
 data "aws_region" "default" {}
 data "aws_caller_identity" "current" {}
+
+resource "aws_ecs_cluster_capacity_providers" "fargate" {
+  cluster_name       = aws_ecs_cluster.minecraft.name
+  capacity_providers = ["FARGATE"]
+  default_capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    base              = 0
+    weight            = 100
+  }
+}
+
+resource "aws_ecr_repository" "scripts" {
+  name = "scripts"
+}
