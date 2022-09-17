@@ -1,0 +1,3 @@
+.env
+infrastructure/.terraform/
+infrastructure/.terraform.lock.hcl
