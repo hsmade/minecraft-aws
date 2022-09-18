@@ -1,10 +1,19 @@
 [
   {
     "name": "setup",
-    "taskRoleArn": "${task_role_arn}",
+    "taskRoleArn": "${sidecars_role_arn}",
     "image": "${setup_image}",
-    "command": ["/scripts/setup.sh"],
+    "entrypoint": ["/scripts/setup.sh"],
     "essential": false,
+    "logConfiguration": {
+      "logDriver":"awslogs",
+      "options": {
+        "awslogs-group": "minecraft",
+        "awslogs-region": "${region}",
+        "awslogs-create-group": "true",
+        "awslogs-stream-prefix": "${name}"
+      }
+    },
     "mountPoints": [
       {
         "containerPath": "/data",
@@ -13,27 +22,45 @@
     ],
     "environment": [
       {
-        "name": "url",
-        "value": "${bucket_url}"
+        "name": "BUCKET",
+        "value": "${bucket_name}"
+      },
+      {
+        "name": "NAME",
+        "value": "${name}"
       }
     ]
   },
   {
     "name": "teardown",
-    "taskRoleArn": "${task_role_arn}",
+    "taskRoleArn": "${sidecars_role_arn}",
     "image": "${teardown_image}",
-    "command": ["/scripts/teardown.sh"],
+    "entrypoint": ["/scripts/teardown.sh"],
     "essential": false,
+    "logConfiguration": {
+      "logDriver":"awslogs",
+      "options": {
+        "awslogs-group": "minecraft",
+        "awslogs-region": "${region}",
+        "awslogs-create-group": "true",
+        "awslogs-stream-prefix": "${name}"
+      }
+    },
     "mountPoints": [
       {
+        "readOnly": true,
         "containerPath": "/data",
         "sourceVolume": "data"
       }
     ],
     "environment": [
       {
-        "name": "url",
-        "value": "${bucket_url}"
+        "name": "BUCKET",
+        "value": "${bucket_name}"
+      },
+      {
+        "name": "NAME",
+        "value": "${name}"
       }
     ],
     "dependsOn": [
@@ -45,11 +72,21 @@
   },
   {
     "name": "backup",
-    "taskRoleArn": "${task_role_arn}",
+    "taskRoleArn": "${sidecars_role_arn}",
     "image": "${backup_image}",
     "essential": true,
+    "logConfiguration": {
+      "logDriver":"awslogs",
+      "options": {
+        "awslogs-group": "minecraft",
+        "awslogs-region": "${region}",
+        "awslogs-create-group": "true",
+        "awslogs-stream-prefix": "${name}"
+      }
+    },
     "mountPoints": [
       {
+        "readOnly": true,
         "containerPath": "/data",
         "sourceVolume": "data"
       }
@@ -101,6 +138,15 @@
     "name": "main",
     "image": "${main_image}",
     "essential": false,
+    "logConfiguration": {
+      "logDriver":"awslogs",
+      "options": {
+        "awslogs-group": "minecraft",
+        "awslogs-region": "${region}",
+        "awslogs-create-group": "true",
+        "awslogs-stream-prefix": "${name}"
+      }
+    },
     "mountPoints": [
       {
         "containerPath": "/data",
@@ -116,7 +162,7 @@
     "dependsOn": [
       {
         "containerName": "setup",
-        "condition": "COMPLETE"
+        "condition": "SUCCESS"
       }
     ]
   }

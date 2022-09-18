@@ -1,5 +1,4 @@
 variable "name" {}
-variable "bucket_url" {}
 variable "backup_image" {
   default = "itzg/mc-backup:latest"
 }
@@ -15,5 +14,5 @@ variable "main_image" {
 variable "account_id" {}
 variable "region" {}
 variable "bucket_name" {}
-variable "task_role_arn" {}
+variable "execution_role_arn" {}
 variable "sidecars_role_arn" {}

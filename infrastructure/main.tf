@@ -82,7 +82,7 @@ resource "aws_ecr_repository" "scripts" {
   name = "scripts"
 }
 
-data "aws_iam_policy_document" "sidecars" {
+data "aws_iam_policy_document" "ecs_assume_role" {
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRole"]
@@ -103,48 +103,64 @@ data "aws_iam_policy_document" "sidecars" {
   }
 }
 
-resource "aws_iam_role" "sidecars" {
-  assume_role_policy = data.aws_iam_policy_document.sidecars.json
+resource "aws_iam_role" "ecs_sidecars" {
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
+  name = "ecs_sidecars"
 }
 
-data "aws_iam_policy_document" "backup_restore" {
+data "aws_iam_policy_document" "ecs_backup_restore" {
+  statement {
+    effect = "Deny"
+    actions = [
+      "s3:*",
+    ]
+    resources = [
+      "arn:aws:s3:::${var.bucket}:/terraform/*",
+    ]
+  }
   statement {
     effect = "Allow"
     actions = [
-      "s3:PutObject",
+      "s3:GetObject",
       "s3:GetObjectVersion",
+      "s3:PutObject",
+      "s3:PutObjectVersion",
       "s3:DeleteObject",
       "s3:DeleteObjectVersion",
+      "s3:PutObjectACL",
     ]
-    resources = ["arn:aws:s3:::${var.bucket}:/*"]
+    resources = [
+      "arn:aws:s3:::${var.bucket}:/*",
+      "arn:aws:s3:::${var.bucket}:",
+    ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:ListObjects",
+    ]
+    resources = [
+      "arn:aws:s3:::${var.bucket}:",
+    ]
   }
 }
 
-resource "aws_iam_policy" "backup_restore" {
-  policy = data.aws_iam_policy_document.backup_restore.json
-  name   = "backup_restore"
+resource "aws_iam_policy" "ecs_backup_restore" {
+  policy = data.aws_iam_policy_document.ecs_backup_restore.json
+  name   = "ecs_backup_restore"
 }
 
 resource "aws_iam_role_policy_attachment" "backup_restore" {
-  policy_arn = aws_iam_policy.backup_restore.arn
-  role       = aws_iam_role.sidecars.name
+  policy_arn = aws_iam_policy.ecs_backup_restore.arn
+  role       = aws_iam_role.ecs_sidecars.name
 }
 
-data "aws_iam_policy_document" "task_role" {
-  statement {
-    effect = "Allow"
-    principals {
-      identifiers = ["ecs-tasks.amazonaws.com"]
-      type        = "Service"
-    }
-    actions = ["sts:AssumeRole"]
-  }
-}
-resource "aws_iam_role" "task_role" {
-  assume_role_policy = data.aws_iam_policy_document.task_role.json
+resource "aws_iam_role" "ecs_execution_role" {
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
+  name = "ecs_execution_role"
 }
 
-data "aws_iam_policy_document" "allow_ecr" {
+data "aws_iam_policy_document" "ecs_execution_role_rules" {
   statement {
     effect = "Allow"
     resources = ["*"]
@@ -155,17 +171,38 @@ data "aws_iam_policy_document" "allow_ecr" {
       "ecr:BatchGetImage",
       "logs:CreateLogStream",
       "logs:PutLogEvents",
+      "logs:CreateLogGroup",
+      "kms:GetPublicKey",
+      "kms:Decrypt",
+      "kms:GenerateDataKey",
+      "kms:DescribeKey",
     ]
   }
 }
 
-# FIXME: is generic
-resource "aws_iam_policy" "allow_ecr" {
-  name = "allow-ecr"
-  policy = data.aws_iam_policy_document.allow_ecr.json
+resource "aws_iam_policy" "ecs_execution_role_rules" {
+  name = "ecs_execution_role_rules"
+  policy = data.aws_iam_policy_document.ecs_execution_role_rules.json
 }
 
 resource "aws_iam_role_policy_attachment" "allow_ecr" {
-  policy_arn = aws_iam_policy.allow_ecr.arn
-  role       = aws_iam_role.task_role.name
+  policy_arn = aws_iam_policy.ecs_execution_role_rules.arn
+  role       = aws_iam_role.ecs_execution_role.name
 }
+
+#data "aws_iam_policy_document" "main-bucket" {
+#  statement {
+#    effect = "Allow"
+#    actions = [
+#      "s3:GetObject",
+#    ]
+#    resources = [
+#      "arn:aws:s3:::${var.bucket}/*.png"
+#    ]
+#  }
+#}
+#
+#resource "aws_s3_bucket_policy" "main_bucket" {
+#  bucket = var.bucket
+#  policy = data.aws_iam_policy_document.main-bucket.json
+#}

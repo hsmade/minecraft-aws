@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    key     = "terraform"
+    key     = "terraform/terraform"
     encrypt = true
   }
 }
