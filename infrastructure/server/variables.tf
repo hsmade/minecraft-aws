@@ -12,3 +12,8 @@ variable "teardown_image" {
 variable "main_image" {
   default = "itzg/minecraft-server:latest"
 }
+variable "account_id" {}
+variable "region" {}
+variable "bucket_name" {}
+variable "task_role_arn" {}
+variable "sidecars_role_arn" {}

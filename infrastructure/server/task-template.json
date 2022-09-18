@@ -1,0 +1,123 @@
+[
+  {
+    "name": "setup",
+    "taskRoleArn": "${task_role_arn}",
+    "image": "${setup_image}",
+    "command": ["/scripts/setup.sh"],
+    "essential": false,
+    "mountPoints": [
+      {
+        "containerPath": "/data",
+        "sourceVolume": "data"
+      }
+    ],
+    "environment": [
+      {
+        "name": "url",
+        "value": "${bucket_url}"
+      }
+    ]
+  },
+  {
+    "name": "teardown",
+    "taskRoleArn": "${task_role_arn}",
+    "image": "${teardown_image}",
+    "command": ["/scripts/teardown.sh"],
+    "essential": false,
+    "mountPoints": [
+      {
+        "containerPath": "/data",
+        "sourceVolume": "data"
+      }
+    ],
+    "environment": [
+      {
+        "name": "url",
+        "value": "${bucket_url}"
+      }
+    ],
+    "dependsOn": [
+      {
+        "containerName": "main",
+        "condition": "COMPLETE"
+      }
+    ]
+  },
+  {
+    "name": "backup",
+    "taskRoleArn": "${task_role_arn}",
+    "image": "${backup_image}",
+    "essential": true,
+    "mountPoints": [
+      {
+        "containerPath": "/data",
+        "sourceVolume": "data"
+      }
+    ],
+    "environment": [
+      {
+        "name" : "RCON_HOST",
+        "value": "main"
+      },
+      {
+        "name" : "BACKUP_METHOD",
+        "value": "rclone"
+      },
+      {
+        "name" : "BACKUP_NAME",
+        "value": "${name}"
+      },
+      {
+        "name" : "INITIAL_DELAY",
+        "value": "5m"
+      },
+      {
+        "name" : "BACKUP_INTERVAL",
+        "value": "5m"
+      },
+      {
+        "name" : "PAUSE_IF_NO_PLAYERS",
+        "value": "true"
+      },
+      {
+        "name" : "PLAYERS_ONLINE_CHECK_INTERVAL",
+        "value": "5m"
+      },
+      {
+        "name" : "PRUNE_BACKUPS_DAYS",
+        "value": "3"
+      },
+      {
+        "name" : "EXCLUDES",
+        "value": "cache,logs"
+      },
+      {
+        "name" : "RCLONE_REMOTE",
+        "value": "s3"
+      }
+    ]
+  },
+  {
+    "name": "main",
+    "image": "${main_image}",
+    "essential": false,
+    "mountPoints": [
+      {
+        "containerPath": "/data",
+        "sourceVolume": "data"
+      }
+    ],
+    "environment": [
+      {
+        "name": "EULA",
+        "value": "TRUE"
+      }
+    ],
+    "dependsOn": [
+      {
+        "containerName": "setup",
+        "condition": "COMPLETE"
+      }
+    ]
+  }
+]

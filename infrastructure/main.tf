@@ -81,3 +81,91 @@ resource "aws_ecs_cluster_capacity_providers" "fargate" {
 resource "aws_ecr_repository" "scripts" {
   name = "scripts"
 }
+
+data "aws_iam_policy_document" "sidecars" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+    principals {
+      identifiers = ["ecs-tasks.amazonaws.com"]
+      type        = "Service"
+    }
+    condition {
+      test     = "ArnLike"
+      values   = ["arn:aws:ecs:${data.aws_region.default.name}:${data.aws_caller_identity.current.account_id}:*"]
+      variable = "aws:SourceArn"
+    }
+    condition {
+      test     = "StringEquals"
+      values   = [data.aws_caller_identity.current.account_id]
+      variable = "aws:SourceAccount"
+    }
+  }
+}
+
+resource "aws_iam_role" "sidecars" {
+  assume_role_policy = data.aws_iam_policy_document.sidecars.json
+}
+
+data "aws_iam_policy_document" "backup_restore" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:PutObject",
+      "s3:GetObjectVersion",
+      "s3:DeleteObject",
+      "s3:DeleteObjectVersion",
+    ]
+    resources = ["arn:aws:s3:::${var.bucket}:/*"]
+  }
+}
+
+resource "aws_iam_policy" "backup_restore" {
+  policy = data.aws_iam_policy_document.backup_restore.json
+  name   = "backup_restore"
+}
+
+resource "aws_iam_role_policy_attachment" "backup_restore" {
+  policy_arn = aws_iam_policy.backup_restore.arn
+  role       = aws_iam_role.sidecars.name
+}
+
+data "aws_iam_policy_document" "task_role" {
+  statement {
+    effect = "Allow"
+    principals {
+      identifiers = ["ecs-tasks.amazonaws.com"]
+      type        = "Service"
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+resource "aws_iam_role" "task_role" {
+  assume_role_policy = data.aws_iam_policy_document.task_role.json
+}
+
+data "aws_iam_policy_document" "allow_ecr" {
+  statement {
+    effect = "Allow"
+    resources = ["*"]
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+  }
+}
+
+# FIXME: is generic
+resource "aws_iam_policy" "allow_ecr" {
+  name = "allow-ecr"
+  policy = data.aws_iam_policy_document.allow_ecr.json
+}
+
+resource "aws_iam_role_policy_attachment" "allow_ecr" {
+  policy_arn = aws_iam_policy.allow_ecr.arn
+  role       = aws_iam_role.task_role.name
+}
