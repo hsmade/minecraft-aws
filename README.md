@@ -24,9 +24,14 @@ The task that is started has the following containers:
 * `TF_VAR_HOME_IP` IP used to restrict web UI to
 * `AWS_ACCESS_KEY_ID`
 * `AWS_SECRET_ACCESS_KEY`
+* `TF_VAR_domain_name` domain name used for minecraft servers
 
 ## permissions needed for AWS user for CI:
 * s3..
+
+## Cost
+### continuous costs
+- route53 zone: 0.50 per month
 
 ## Todo
 - define permissions above
@@ -42,6 +47,8 @@ The task that is started has the following containers:
 - web:
   - list servers (task definitions), with status (tasks)
   - stop task
-  - create task
+    - delete route53 record
+  - create task / start server
+    - create route53 record
   - rcon
   - create server

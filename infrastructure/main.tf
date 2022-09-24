@@ -225,3 +225,7 @@ resource "aws_s3_bucket_policy" "main_bucket" {
   bucket = var.bucket
   policy = data.aws_iam_policy_document.main_bucket.json
 }
+
+resource "aws_route53_zone" "domain" {
+  name = var.domain_name
+}

@@ -48,4 +48,5 @@ jobs:
           TFSTATE_REGION: ${{ secrets.TFSTATE_REGION }}
           TF_VAR_bucket: ${{ secrets.TF_VAR_BUCKET }}
           TF_VAR_home_ip: ${{ secrets.TF_VAR_HOME_IP }}
+          TF_VAR_domain_name: ${{ secrets.TF_VAR_DOMAIN_NAME }}
         run: make infrastructure

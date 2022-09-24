@@ -2,7 +2,13 @@ variable "bucket" {
   type        = string
   description = "name of the bucket"
 }
+
 variable "home_ip" {
   type = string
   description = "IP to allow access to"
+}
+
+variable "domain_name" {
+  type = string
+  description = "domain name to create records one for the servers"
 }

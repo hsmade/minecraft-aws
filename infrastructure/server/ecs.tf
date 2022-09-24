@@ -20,9 +20,9 @@ resource "aws_ecs_task_definition" "task" {
       bucket_name       = var.bucket_name
       sidecars_role_arn = var.sidecars_role_arn
       region            = var.region
-      minecraft_type = var.minecraft_type
+      minecraft_type    = var.minecraft_type
       minecraft_version = var.minecraft_version
-      forge_version = var.forge_version
+      forge_version     = var.forge_version
     }
   )
 }
