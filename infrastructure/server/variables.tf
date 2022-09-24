@@ -16,3 +16,6 @@ variable "region" {}
 variable "bucket_name" {}
 variable "execution_role_arn" {}
 variable "sidecars_role_arn" {}
+variable "minecraft_version" {}
+variable "forge_version" {}
+variable "minecraft_type" {}
