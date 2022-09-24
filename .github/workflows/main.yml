@@ -14,9 +14,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.TFSTATE_REGION }}
       - uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
       - shell: bash
         env:
-          ECR: ${{ steps.login-ecr-public.outputs.registry }}
+          ECR: ${{ steps.login-ecr.outputs.registry }}
         run: make scripts
   storage_list:
     runs-on: ubuntu-latest
@@ -28,9 +29,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.TFSTATE_REGION }}
       - uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
       - shell: bash
         env:
-          ECR: ${{ steps.login-ecr-public.outputs.registry }}
+          ECR: ${{ steps.login-ecr.outputs.registry }}
         run: make storage_list
   infrastructure:
     runs-on: ubuntu-latest
@@ -43,6 +45,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           TFSTATE_BUCKET: ${{ secrets.TFSTATE_BUCKET }}
           TFSTATE_REGION: ${{ secrets.TFSTATE_REGION }}
-          TF_VAR_BUCKET: ${{ secrets.TF_VAR_BUCKET }}
-          TF_VAR_HOME_IP: ${{ secrets.TF_VAR_HOME_IP }}
+          TF_VAR_bucket: ${{ secrets.TF_VAR_BUCKET }}
+          TF_VAR_home_ip: ${{ secrets.TF_VAR_HOME_IP }}
         run: make infrastructure
