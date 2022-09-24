@@ -229,3 +229,11 @@ resource "aws_s3_bucket_policy" "main_bucket" {
 resource "aws_route53_zone" "domain" {
   name = var.domain_name
 }
+
+data "aws_vpc" "main" {}
+data "aws_subnets" "subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.main.id]
+  }
+}
