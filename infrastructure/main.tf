@@ -2,11 +2,6 @@ data "aws_s3_bucket" "minecraft" {
   bucket = var.bucket
 }
 
-resource "aws_kms_key" "minecraft" {
-  description             = "minecraft"
-  deletion_window_in_days = 7
-}
-
 resource "aws_cloudwatch_log_group" "ecs-cluster" {
   name = "minecraft"
 }
@@ -16,7 +11,6 @@ resource "aws_ecs_cluster" "minecraft" {
 
   configuration {
     execute_command_configuration {
-      kms_key_id = aws_kms_key.minecraft.arn
       logging    = "OVERRIDE"
 
       log_configuration {
