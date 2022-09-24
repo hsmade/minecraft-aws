@@ -1,10 +1,3 @@
-# TODO: rclone config
-# TODO: check teardown is run - it's not on stop
-# TODO: status stuck at pending, because of teardown?
-# TODO: port + public IP
-# TODO: health?
-# TODO: rcon doesn't connect
-
 resource "aws_ecs_task_definition" "task" {
   execution_role_arn       = var.execution_role_arn
   task_role_arn            = var.sidecars_role_arn

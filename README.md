@@ -24,3 +24,24 @@ The task that is started has the following containers:
 * `TF_VAR_HOME_IP` IP used to restrict web UI to
 * `AWS_ACCESS_KEY_ID`
 * `AWS_SECRET_ACCESS_KEY`
+
+## permissions needed for AWS user for CI:
+* s3..
+
+## Todo
+- define permissions above
+- use iam role instead of user directly
+- current docker image will download the server and install it, every time. This takes too long
+- ecs:
+  - rclone config
+  - check teardown is run - it's not on stop
+  - status stuck at pending, because of teardown?
+  - port + public IP
+  - health check?
+  - backup: rcon doesn't connect
+- web:
+  - list servers (task definitions), with status (tasks)
+  - stop task
+  - create task
+  - rcon
+  - create server
