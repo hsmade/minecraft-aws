@@ -34,7 +34,7 @@ The task that is started has the following containers:
 - current docker image will download the server and install it, every time. This takes too long
 - ecs:
   - rclone config
-  - check teardown is run - it's not on stop
+  - check teardown is run - it's not on stop of task?
   - status stuck at pending, because of teardown?
   - port + public IP
   - health check?

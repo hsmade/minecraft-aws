@@ -94,7 +94,7 @@
     "environment": [
       {
         "name" : "RCON_HOST",
-        "value": "main"
+        "value": "localhost"
       },
       {
         "name" : "BACKUP_METHOD",
