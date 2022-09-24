@@ -1,11 +1,9 @@
 # TODO: rclone config
-# TODO: test IAM for S3
-# TODO: logging
-# TODO: check teardown is run
+# TODO: check teardown is run - it's not on stop
 # TODO: status stuck at pending, because of teardown?
 # TODO: port + public IP
 # TODO: health?
-# TODO: rcon
+# TODO: rcon doesn't connect
 
 resource "aws_ecs_task_definition" "task" {
   execution_role_arn       = var.execution_role_arn
@@ -29,6 +27,9 @@ resource "aws_ecs_task_definition" "task" {
       bucket_name       = var.bucket_name
       sidecars_role_arn = var.sidecars_role_arn
       region            = var.region
+      minecraft_type = var.minecraft_type
+      minecraft_version = var.minecraft_version
+      forge_version = var.forge_version
     }
   )
 }

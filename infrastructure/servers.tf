@@ -8,4 +8,7 @@ module "pim" {
   account_id         = data.aws_caller_identity.current.account_id
   sidecars_role_arn  = aws_iam_role.ecs_sidecars.arn
   execution_role_arn = aws_iam_role.ecs_execution_role.arn
+  minecraft_type     = "FORGE"
+  minecraft_version  = "1.18.1"
+  forge_version      = "39.0.59"
 }

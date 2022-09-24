@@ -73,7 +73,7 @@ resource "aws_ecs_cluster_capacity_providers" "fargate" {
   capacity_providers = ["FARGATE"]
   default_capacity_provider_strategy {
     capacity_provider = "FARGATE"
-    base              = 0
+    base              = 1
     weight            = 100
   }
 }
@@ -105,7 +105,7 @@ data "aws_iam_policy_document" "ecs_assume_role" {
 
 resource "aws_iam_role" "ecs_sidecars" {
   assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
-  name = "ecs_sidecars"
+  name               = "ecs_sidecars"
 }
 
 data "aws_iam_policy_document" "ecs_backup_restore" {
@@ -124,7 +124,6 @@ data "aws_iam_policy_document" "ecs_backup_restore" {
       "s3:GetObject",
       "s3:GetObjectVersion",
       "s3:PutObject",
-      "s3:PutObjectVersion",
       "s3:DeleteObject",
       "s3:DeleteObjectVersion",
       "s3:PutObjectACL",
@@ -137,7 +136,7 @@ data "aws_iam_policy_document" "ecs_backup_restore" {
   statement {
     effect = "Allow"
     actions = [
-      "s3:ListObjects",
+      "s3:ListBucket",
     ]
     resources = [
       "arn:aws:s3:::${var.bucket}:",
@@ -157,12 +156,12 @@ resource "aws_iam_role_policy_attachment" "backup_restore" {
 
 resource "aws_iam_role" "ecs_execution_role" {
   assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
-  name = "ecs_execution_role"
+  name               = "ecs_execution_role"
 }
 
 data "aws_iam_policy_document" "ecs_execution_role_rules" {
   statement {
-    effect = "Allow"
+    effect    = "Allow"
     resources = ["*"]
     actions = [
       "ecr:GetAuthorizationToken",
@@ -181,7 +180,7 @@ data "aws_iam_policy_document" "ecs_execution_role_rules" {
 }
 
 resource "aws_iam_policy" "ecs_execution_role_rules" {
-  name = "ecs_execution_role_rules"
+  name   = "ecs_execution_role_rules"
   policy = data.aws_iam_policy_document.ecs_execution_role_rules.json
 }
 
@@ -190,19 +189,45 @@ resource "aws_iam_role_policy_attachment" "allow_ecr" {
   role       = aws_iam_role.ecs_execution_role.name
 }
 
-#data "aws_iam_policy_document" "main-bucket" {
-#  statement {
-#    effect = "Allow"
-#    actions = [
-#      "s3:GetObject",
-#    ]
-#    resources = [
-#      "arn:aws:s3:::${var.bucket}/*.png"
-#    ]
-#  }
-#}
-#
-#resource "aws_s3_bucket_policy" "main_bucket" {
-#  bucket = var.bucket
-#  policy = data.aws_iam_policy_document.main-bucket.json
-#}
+data "aws_iam_policy_document" "main_bucket" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:GetObjectVersion",
+    ]
+    principals {
+      identifiers = ["*"]
+      type        = "*"
+    }
+    resources = [
+      "arn:aws:s3:::${var.bucket}/*.png"
+    ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:GetObjectVersion",
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:DeleteObjectVersion",
+      "s3:PutObjectACL",
+    ]
+    principals {
+      identifiers = [
+        "arn:aws:iam::647334721350:role/ecs_sidecars",
+        "arn:aws:iam::647334721350:root",
+      ]
+      type = "AWS"
+    }
+    resources = [
+      "arn:aws:s3:::${var.bucket}/*.tgz"
+    ]
+  }
+}
+
+resource "aws_s3_bucket_policy" "main_bucket" {
+  bucket = var.bucket
+  policy = data.aws_iam_policy_document.main_bucket.json
+}

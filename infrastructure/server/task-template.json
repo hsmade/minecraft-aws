@@ -157,6 +157,18 @@
       {
         "name": "EULA",
         "value": "TRUE"
+      },
+      {
+        "name": "TYPE",
+        "value": "${minecraft_type}"
+      },
+      {
+        "name": "VERSION",
+        "value": "${minecraft_version}"
+      },
+     {
+        "name": "FORGEVERSION",
+        "value": "${forge_version}"
       }
     ],
     "dependsOn": [

@@ -14,9 +14,8 @@ scripts:
 
 .PHONY: infrastructure
 infrastructure:
-	source .env && \
 	cd infrastructure && \
     terraform init \
 	  -backend-config="bucket=$(TFSTATE_BUCKET)" \
 	  -backend-config="region=$(TFSTATE_REGION)" && \
-	terraform apply
+	terraform apply -auto-approve -input=false
