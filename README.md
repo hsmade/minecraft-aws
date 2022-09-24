@@ -30,7 +30,7 @@ The task that is started has the following containers:
 
 ## Todo
 - define permissions above
-- use iam role instead of user directly
+- use iam role instead of user directly https://github.com/aws-actions/configure-aws-credentials#assuming-a-role
 - current docker image will download the server and install it, every time. This takes too long
 - ecs:
   - rclone config
