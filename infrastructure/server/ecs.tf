@@ -7,7 +7,7 @@ resource "aws_ecs_task_definition" "task" {
   volume {
     name = "data"
     efs_volume_configuration {
-      file_system_id = aws_efs_file_system.data.id
+      file_system_id     = aws_efs_file_system.data.id
       transit_encryption = "ENABLED"
     }
   }
@@ -25,6 +25,7 @@ resource "aws_ecs_task_definition" "task" {
       minecraft_type    = var.minecraft_type
       minecraft_version = var.minecraft_version
       forge_version     = var.forge_version
+      whitelist         = join(",", var.whitelist)
     }
   )
 }

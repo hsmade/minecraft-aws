@@ -16,3 +16,6 @@ variable "minecraft_type" {}
 variable "subnets" {
   type = list(string)
 }
+variable "whitelist" {
+  type = list(string)
+}

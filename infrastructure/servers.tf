@@ -9,7 +9,8 @@ module "pim" {
   minecraft_type     = "FORGE"
   minecraft_version  = "1.18.1"
   forge_version      = "39.0.59"
-  subnets = data.aws_subnets.subnets.ids
+  subnets            = data.aws_subnets.subnets.ids
+  whitelist          = var.whitelist
 }
 
 module "test" {
@@ -23,5 +24,6 @@ module "test" {
   minecraft_type     = "FORGE"
   minecraft_version  = "1.18.1"
   forge_version      = "39.0.59"
-  subnets = data.aws_subnets.subnets.ids
+  subnets            = data.aws_subnets.subnets.ids
+  whitelist          = var.whitelist
 }

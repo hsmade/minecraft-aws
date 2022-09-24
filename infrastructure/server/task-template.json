@@ -104,6 +104,10 @@
         "value": "${minecraft_type}"
       },
       {
+        "name": "WHITELIST",
+        "value": "${whitelist}"
+      },
+      {
         "name": "VERSION",
         "value": "${minecraft_version}"
       },
