@@ -10,9 +10,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-region: ${TFSTATE_REGION}
+          aws-region: ${{ secrets.TFSTATE_REGION }}
       - uses: aws-actions/amazon-ecr-login@v1
       - name: build and upload image
+        env:
+          ECR: ${{ steps.login-ecr-public.outputs.registry }}
         run: make scripts
   storage_list:
     runs-on: ubuntu-latest
@@ -20,9 +22,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-region: ${TFSTATE_REGION}
+          aws-region: ${{ secrets.TFSTATE_REGION }}
       - uses: aws-actions/amazon-ecr-login@v1
       - name: build and upload image
+        env:
+          ECR: ${{ steps.login-ecr-public.outputs.registry }}
         run: make storage_list
   infrastructure:
     runs-on: ubuntu-latest
@@ -30,4 +34,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: hashicorp/setup-terraform@v2
       - name: run terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TFSTATE_BUCKET: ${{ secrets.TFSTATE_BUCKET }}
+          TFSTATE_REGION: ${{ secrets.TFSTATE_REGION }}
+          TF_VAR_BUCKET: ${{ secrets.TF_VAR_BUCKET }}
+          TF_VAR_HOME_IP: ${{ secrets.TF_VAR_HOME_IP }}
         run: make infrastructure
