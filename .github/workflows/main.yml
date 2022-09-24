@@ -17,16 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: login to ECR
-        run: aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR}
+      - uses: aws-actions/amazon-ecr-login@v1
       - name: build and upload image
         run: make scripts
   storage_list:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: login to ECR
-        run: aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR}
+      - uses: aws-actions/amazon-ecr-login@v1
       - name: build and upload image
         run: make storage_list
   infrastructure:
