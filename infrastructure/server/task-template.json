@@ -113,12 +113,6 @@
       "retries": 3,
       "startPeriod": 300,
       "timeout": 5
-    },
-    "dependsOn": [
-      {
-        "containerName": "setup",
-        "condition": "SUCCESS"
-      }
-    ]
+    }
   }
 ]
