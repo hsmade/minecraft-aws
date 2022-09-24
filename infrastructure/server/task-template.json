@@ -83,6 +83,9 @@
         "awslogs-stream-prefix": "${name}"
       }
     },
+    "PortMapping": {
+      "ContainerPort": 25565
+    },
     "mountPoints": [
       {
         "containerPath": "/data",

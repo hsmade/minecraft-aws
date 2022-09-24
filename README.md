@@ -39,8 +39,7 @@ The task that is started has the following containers:
 - current docker image will download the server and install it, every time. This takes too long
 - ecs:
   - rclone config for backup
-  - port + public IP
-  - allow efs in ecs sg
+  - allow efs in ecs sg?
 - web:
   - list servers (task definitions), with status (tasks)
   - stop task / stop server
