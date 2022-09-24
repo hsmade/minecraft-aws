@@ -15,3 +15,12 @@ The task that is started has the following containers:
 * main - runs the minecraft server from the shared volume; depends on setup completing successfully
 * backup - runs backups on an interval; depends on the main container being started
 * teardown - creates an archive from the shared volume and uploads it; depends on the main container being in a completed state.
+
+## Secrets
+* `ECR` name of the ECR (1234567890.dkr.ecr.<region>.amazonaws.com)
+* `TF_VAR_bucket` name of the bucket
+* `TFSTATE_BUCKET` name of the bucket
+* `TFSTATE_REGION` name of the AWS region
+* `TF_VAR_HOME_IP` IP used to restrict web UI to
+* `AWS_ACCESS_KEY_ID`
+* `AWS_SECRET_ACCESS_KEY`

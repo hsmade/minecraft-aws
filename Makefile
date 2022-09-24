@@ -14,7 +14,6 @@ scripts:
 
 .PHONY: infrastructure
 infrastructure:
-	source .env && \
 	cd infrastructure && \
     terraform init \
 	  -backend-config="bucket=$(TFSTATE_BUCKET)" \
