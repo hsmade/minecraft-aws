@@ -40,6 +40,7 @@ The task that is started has the following containers:
 - ecs:
   - rclone config for backup
   - allow efs in ecs sg?
+  - add user whitelist (env vars for server.properties?)
 - web:
   - list servers (task definitions), with status (tasks)
   - stop task / stop server
