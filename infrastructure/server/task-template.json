@@ -1,80 +1,9 @@
 [
   {
-    "name": "setup",
-    "taskRoleArn": "${sidecars_role_arn}",
-    "image": "${setup_image}",
-    "entrypoint": ["/scripts/setup.sh"],
-    "essential": false,
-    "logConfiguration": {
-      "logDriver":"awslogs",
-      "options": {
-        "awslogs-group": "minecraft",
-        "awslogs-region": "${region}",
-        "awslogs-create-group": "true",
-        "awslogs-stream-prefix": "${name}"
-      }
-    },
-    "mountPoints": [
-      {
-        "containerPath": "/data",
-        "sourceVolume": "data"
-      }
-    ],
-    "environment": [
-      {
-        "name": "BUCKET",
-        "value": "${bucket_name}"
-      },
-      {
-        "name": "NAME",
-        "value": "${name}"
-      }
-    ]
-  },
-  {
-    "name": "teardown",
-    "taskRoleArn": "${sidecars_role_arn}",
-    "image": "${teardown_image}",
-    "entrypoint": ["/scripts/teardown.sh"],
-    "essential": false,
-    "logConfiguration": {
-      "logDriver":"awslogs",
-      "options": {
-        "awslogs-group": "minecraft",
-        "awslogs-region": "${region}",
-        "awslogs-create-group": "true",
-        "awslogs-stream-prefix": "${name}"
-      }
-    },
-    "mountPoints": [
-      {
-        "readOnly": true,
-        "containerPath": "/data",
-        "sourceVolume": "data"
-      }
-    ],
-    "environment": [
-      {
-        "name": "BUCKET",
-        "value": "${bucket_name}"
-      },
-      {
-        "name": "NAME",
-        "value": "${name}"
-      }
-    ],
-    "dependsOn": [
-      {
-        "containerName": "main",
-        "condition": "COMPLETE"
-      }
-    ]
-  },
-  {
     "name": "backup",
     "taskRoleArn": "${sidecars_role_arn}",
     "image": "${backup_image}",
-    "essential": true,
+    "essential": false,
     "logConfiguration": {
       "logDriver":"awslogs",
       "options": {
@@ -132,12 +61,19 @@
         "name" : "RCLONE_REMOTE",
         "value": "s3"
       }
+    ],
+    "dependsOn": [
+      {
+        "containerName": "main",
+        "condition": "HEALTHY"
+      }
     ]
+
   },
   {
     "name": "main",
     "image": "${main_image}",
-    "essential": false,
+    "essential": true,
     "logConfiguration": {
       "logDriver":"awslogs",
       "options": {
@@ -171,6 +107,13 @@
         "value": "${forge_version}"
       }
     ],
+    "HealthCheck": {
+      "command": ["mc-health"],
+      "interval": 30,
+      "retries": 3,
+      "startPeriod": 300,
+      "timeout": 5
+    },
     "dependsOn": [
       {
         "containerName": "setup",

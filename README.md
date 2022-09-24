@@ -18,13 +18,13 @@ The task that is started has the following containers:
 
 ## Secrets
 * `ECR` name of the ECR (1234567890.dkr.ecr.<region>.amazonaws.com)
-* `TF_VAR_bucket` name of the bucket
 * `TFSTATE_BUCKET` name of the bucket
 * `TFSTATE_REGION` name of the AWS region
-* `TF_VAR_HOME_IP` IP used to restrict web UI to
+* `TF_VAR_bucket` name of the bucket
+* `TF_VAR_home_ip` IP used to restrict web UI to
+* `TF_VAR_domain_name` domain name used for minecraft servers
 * `AWS_ACCESS_KEY_ID`
 * `AWS_SECRET_ACCESS_KEY`
-* `TF_VAR_domain_name` domain name used for minecraft servers
 
 ## permissions needed for AWS user for CI:
 * s3..
@@ -38,17 +38,14 @@ The task that is started has the following containers:
 - use iam role instead of user directly https://github.com/aws-actions/configure-aws-credentials#assuming-a-role
 - current docker image will download the server and install it, every time. This takes too long
 - ecs:
-  - rclone config
-  - check teardown is run - it's not on stop of task?
-  - status stuck at pending, because of teardown?
+  - rclone config for backup
   - port + public IP
-  - health check?
-  - backup: rcon doesn't connect
+  - allow efs in ecs sg
 - web:
   - list servers (task definitions), with status (tasks)
-  - stop task
+  - stop task / stop server
+    - run final backup
     - delete route53 record
   - create task / start server
     - create route53 record
   - rcon
-  - create server

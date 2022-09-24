@@ -6,6 +6,10 @@ resource "aws_ecs_task_definition" "task" {
   network_mode             = "awsvpc"
   volume {
     name = "data"
+    efs_volume_configuration {
+      file_system_id = aws_efs_file_system.data.id
+      transit_encryption = "ENABLED"
+    }
   }
   cpu    = "1024"
   memory = "2048"
@@ -13,10 +17,8 @@ resource "aws_ecs_task_definition" "task" {
     "${path.module}/task-template.json",
     {
       name              = var.name
-      setup_image       = var.setup_image
       backup_image      = var.backup_image
       main_image        = var.main_image
-      teardown_image    = var.teardown_image
       bucket_name       = var.bucket_name
       sidecars_role_arn = var.sidecars_role_arn
       region            = var.region
