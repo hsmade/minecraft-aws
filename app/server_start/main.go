@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"minecraft-catalog/business/catalog"
@@ -26,6 +27,7 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 		return wrapError(http.StatusInternalServerError, err)
 	}
 
+	fmt.Print("starting server")
 	err = server.Start()
 	if err != nil {
 		return wrapError(http.StatusInternalServerError, err)

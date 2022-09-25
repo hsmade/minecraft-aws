@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var timeout = 30 * time.Second
+var timeout = 20 * time.Second
 
 type Server struct {
 	Name          string // task definition family name
@@ -154,6 +154,7 @@ func (S Server) Start() error {
 		return errors.New(fmt.Sprintf("found already running task with ARN: %s", *task.TaskArn))
 	}
 
+	fmt.Print("creating task set")
 	_, err = S.EcsClient.CreateTaskSet(context.TODO(), &ecs.CreateTaskSetInput{
 		Cluster:        &S.Cluster,
 		TaskDefinition: &S.Name,
@@ -165,12 +166,15 @@ func (S Server) Start() error {
 		if time.Now().After(start.Add(timeout)) {
 			return errors.New("timeout waiting for server to get IP")
 		}
-		task, _ = S.getRunningTask()
+		task, err = S.getRunningTask()
+		fmt.Printf("loop: task: %+v err: %v", task, err)
 		if task == nil {
 			continue // no running task yet
 		}
+		fmt.Printf("looping over containers")
 		for _, container := range task.Containers {
 			for _, binding := range container.NetworkBindings {
+				fmt.Printf("looping over binding: %+v for container: %+v", binding, container)
 				if *binding.BindIP != "" {
 					ip = *binding.BindIP
 					break
@@ -184,6 +188,6 @@ func (S Server) Start() error {
 			break
 		}
 	}
-
+	fmt.Print("creating DNS record")
 	return errors.Wrap(S.createOrUpdateDNSRecord(ip), "setting DNS record")
 }
