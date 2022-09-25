@@ -98,6 +98,11 @@ func (S Server) Stop() error {
 }
 
 func (S Server) deleteDNSRecord() error {
+	ip, err := S.getIP()
+	if err != nil {
+		return errors.Wrap(err, "getting IP")
+	}
+
 	output, err := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    &S.DNSZoneID,
 		MaxItems:        aws.Int32(1),
@@ -111,7 +116,7 @@ func (S Server) deleteDNSRecord() error {
 	if len(output.ResourceRecordSets) == 0 {
 		return nil
 	}
-	return errors.Wrap(S.modifyDNSRecord("", route53Types.ChangeActionDelete), "deleting DNS record")
+	return errors.Wrap(S.modifyDNSRecord(ip, route53Types.ChangeActionDelete), "deleting DNS record")
 }
 
 func (S Server) modifyDNSRecord(ip string, action route53Types.ChangeAction) error {
@@ -139,7 +144,12 @@ func (S Server) modifyDNSRecord(ip string, action route53Types.ChangeAction) err
 	return err
 }
 
-func (S Server) createOrUpdateDNSRecord(ip string) error {
+func (S Server) createOrUpdateDNSRecord() error {
+	ip, err := S.getIP()
+	if err != nil {
+		return errors.Wrap(err, "getting IP")
+	}
+
 	output, err := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    &S.DNSZoneID,
 		MaxItems:        aws.Int32(1),
@@ -154,6 +164,60 @@ func (S Server) createOrUpdateDNSRecord(ip string) error {
 		return errors.Wrap(S.modifyDNSRecord(ip, route53Types.ChangeActionCreate), "creating DNS record")
 	}
 	return errors.Wrap(S.modifyDNSRecord(ip, route53Types.ChangeActionUpsert), "updating DNS record")
+}
+
+func (S Server) getIP() (string, error) {
+	ip := ""
+	start := time.Now()
+
+	for {
+		if time.Now().After(start.Add(timeout)) {
+			return ip, errors.New("timeout waiting for server to get IP")
+		}
+
+		task, err := S.getRunningTask()
+		fmt.Printf("loop: task: %+v err: %v\n", task, err)
+
+		if task == nil {
+			continue // no running task yet
+		}
+
+		fmt.Print("looping over attachments\n")
+		for _, attachment := range task.Attachments {
+			for _, detail := range attachment.Details {
+				fmt.Printf("looping over detail: %+v for attachment: %+v\n", detail, attachment)
+				if *detail.Name == "networkInterfaceId" && detail.Value != nil && *detail.Value != "" {
+					for {
+						if time.Now().After(start.Add(timeout)) {
+							return ip, errors.New("timeout waiting for server to get IP")
+						}
+
+						output, err := S.ec2Client.DescribeNetworkInterfaces(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
+							NetworkInterfaceIds: []string{*detail.Value},
+						})
+						if err != nil {
+							fmt.Printf("DescribeNetworkInterfaces got error: %v\n", err)
+							continue
+						}
+
+						if len(output.NetworkInterfaces) == 0 {
+							fmt.Println("no network interfaces yet")
+							continue
+						}
+
+						if output.NetworkInterfaces[0].Association == nil {
+							fmt.Println("association is still nil")
+							continue
+						}
+
+						fmt.Printf("network interfaces: %+v\n", output.NetworkInterfaces)
+						return *output.NetworkInterfaces[0].Association.PublicIp, nil
+					}
+				}
+			}
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func (S Server) Start() error {
@@ -183,67 +247,6 @@ func (S Server) Start() error {
 		return errors.Wrap(err, "creating task set")
 	}
 
-	ip := ""
-	start := time.Now()
-	for {
-		if time.Now().After(start.Add(timeout)) {
-			return errors.New("timeout waiting for server to get IP")
-		}
-
-		task, err = S.getRunningTask()
-		fmt.Printf("loop: task: %+v err: %v\n", task, err)
-
-		if task == nil {
-			continue // no running task yet
-		}
-
-		fmt.Print("looping over attachments\n")
-		for _, attachment := range task.Attachments {
-			for _, detail := range attachment.Details {
-				fmt.Printf("looping over detail: %+v for attachment: %+v\n", detail, attachment)
-				if *detail.Name == "networkInterfaceId" && detail.Value != nil && *detail.Value != "" {
-					for {
-						if time.Now().After(start.Add(timeout)) {
-							return errors.New("timeout waiting for server to get IP")
-						}
-
-						output, err := S.ec2Client.DescribeNetworkInterfaces(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
-							NetworkInterfaceIds: []string{*detail.Value},
-						})
-						if err != nil {
-							fmt.Printf("DescribeNetworkInterfaces got error: %v\n", err)
-							continue
-						}
-
-						if len(output.NetworkInterfaces) == 0 {
-							fmt.Println("no network interfaces yet")
-							continue
-						}
-
-						if output.NetworkInterfaces[0].Association == nil {
-							fmt.Println("association is still nil")
-							continue
-						}
-
-						fmt.Printf("network interfaces: %+v\n", output.NetworkInterfaces)
-						ip = *output.NetworkInterfaces[0].Association.PublicIp
-						break
-					}
-				}
-				if ip != "" {
-					break
-				}
-			}
-			if ip != "" {
-				break
-			}
-		}
-		if ip != "" {
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-
 	fmt.Print("creating DNS record\n")
-	return errors.Wrap(S.createOrUpdateDNSRecord(ip), "setting DNS record")
+	return errors.Wrap(S.createOrUpdateDNSRecord(), "setting DNS record")
 }
