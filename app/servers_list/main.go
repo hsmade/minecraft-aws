@@ -15,6 +15,11 @@ func wrapError(status int, err error) (events.APIGatewayProxyResponse, error) {
 	}, nil
 }
 
+type Response struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+}
+
 func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	servers, err := catalog.New()
 	if err != nil {
@@ -27,13 +32,17 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 		return wrapError(http.StatusInternalServerError, err)
 	}
 
-	var statuses []*catalog.ServerStatus
+	var responses []Response
 	for _, server := range serverList {
+		response := Response{
+			Name:   server.Name,
+			Status: "NONE",
+		}
 		status, err := server.Status()
 		if err != nil {
-			continue
+			response.Status = status.Status
 		}
-		statuses = append(statuses, status)
+		responses = append(responses, response)
 	}
 
 	return events.APIGatewayProxyResponse{
