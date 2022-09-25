@@ -32,6 +32,7 @@ module "server_start" {
   rest_api_id  = aws_api_gateway_rest_api.minecraft.id
   cluster_name = aws_ecs_cluster.minecraft.name
   dns_zone_id  = aws_route53_zone.domain.id
+  dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   name         = "server_start"
   path         = "server"
@@ -55,6 +56,7 @@ module "server_stop" {
   rest_api_id  = aws_api_gateway_rest_api.minecraft.id
   cluster_name = aws_ecs_cluster.minecraft.name
   dns_zone_id  = aws_route53_zone.domain.id
+  dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   name         = "server_stop"
   path         = "server"
@@ -76,6 +78,7 @@ module "server_status" {
   rest_api_id  = aws_api_gateway_rest_api.minecraft.id
   cluster_name = aws_ecs_cluster.minecraft.name
   dns_zone_id  = aws_route53_zone.domain.id
+  dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   name         = "server_status"
   path         = "server"
@@ -100,6 +103,7 @@ module "servers_list" {
   rest_api_id  = aws_api_gateway_rest_api.minecraft.id
   cluster_name = aws_ecs_cluster.minecraft.name
   dns_zone_id  = aws_route53_zone.domain.id
+  dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   name         = "servers_list"
   path         = "servers"

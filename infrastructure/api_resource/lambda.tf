@@ -4,7 +4,7 @@ resource "aws_ecr_repository" "repository" {
 
 data "aws_ecr_image" "image" {
   repository_name = var.name
-  image_tag = "latest"
+  image_tag       = "latest"
 }
 
 data "aws_iam_policy_document" "lambda" {
@@ -20,7 +20,7 @@ data "aws_iam_policy_document" "lambda" {
 
 data "aws_iam_policy_document" "iam_role" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = var.iam_actions
     resources = [
       "*"
@@ -34,7 +34,7 @@ resource "aws_iam_policy" "iam_role" {
 }
 
 resource "aws_iam_role" "iam_role" {
-  name               =  var.name
+  name               = var.name
   assume_role_policy = data.aws_iam_policy_document.lambda.json
 }
 
@@ -56,9 +56,10 @@ resource "aws_lambda_function" "function" {
   package_type  = "Image"
   environment {
     variables = {
-      CLUSTER = var.cluster_name
+      CLUSTER     = var.cluster_name
       DNS_ZONE_ID = var.dns_zone_id
-      SUBNETS = join(",", var.subnets)
+      DNS_ZONE    = var.dns_zone
+      SUBNETS     = join(",", var.subnets)
     }
   }
 

@@ -116,7 +116,7 @@ func (S Server) deleteDNSRecord() error {
 
 func (S Server) modifyDNSRecord(ip string, action route53Types.ChangeAction) error {
 	record := route53Types.ResourceRecordSet{
-		Name: &S.Name,
+		Name: aws.String(S.Name + "." + os.Getenv("DNS_ZONE")),
 		Type: "A",
 		TTL:  aws.Int64(10),
 		ResourceRecords: []route53Types.ResourceRecord{
@@ -143,7 +143,7 @@ func (S Server) createOrUpdateDNSRecord(ip string) error {
 	output, err := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    &S.DNSZoneID,
 		MaxItems:        aws.Int32(1),
-		StartRecordName: &S.Name,
+		StartRecordName: aws.String(S.Name + "." + os.Getenv("DNS_ZONE")),
 		StartRecordType: "A",
 	})
 	if err != nil {

@@ -8,6 +8,7 @@ variable "path" {}
 variable "method" {}
 variable "cluster_name" {}
 variable "dns_zone_id" {}
+variable "dns_zone" {}
 variable "subnets" {
   type = list(string)
 }
