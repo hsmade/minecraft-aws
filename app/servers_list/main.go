@@ -41,7 +41,7 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 		fmt.Printf("checking status for server '%s'\n", server.Name)
 		status, err := server.Status()
-		if err != nil {
+		if err == nil {
 			response.Status = status.Status
 		}
 		responses = append(responses, response)
