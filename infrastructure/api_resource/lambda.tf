@@ -49,11 +49,11 @@ resource "aws_lambda_function" "function" {
   image_uri     = "${aws_ecr_repository.repository.repository_url}:latest"
   timeout       = "30"
   package_type  = "Image"
-  environment {
-    variables = {
+#  environment {
+#    variables = {
 #      BUCKET = var.bucket
-    }
-  }
+#    }
+#  }
 
   depends_on = [
     aws_ecr_repository.repository

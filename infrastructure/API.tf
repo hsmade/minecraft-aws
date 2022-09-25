@@ -4,10 +4,10 @@ module "server_start" {
   account_id       = data.aws_caller_identity.current.account_id
   rest_api_id      = aws_api_gateway_rest_api.minecraft.id
   rest_api_root_id = aws_api_gateway_rest_api.minecraft.root_resource_id
-  name = "start"
-  path = "server"
-  method = "PUT"
-  iam_actions = ["s3:listBucket"]
+  name             = "start"
+  path             = "server"
+  method           = "PUT"
+  iam_actions      = ["s3:listBucket"]
 }
 
 module "server_stop" {
@@ -16,10 +16,10 @@ module "server_stop" {
   account_id       = data.aws_caller_identity.current.account_id
   rest_api_id      = aws_api_gateway_rest_api.minecraft.id
   rest_api_root_id = aws_api_gateway_rest_api.minecraft.root_resource_id
-  name = "stop"
-  path = "server"
-  method = "PUT"
-  iam_actions = ["s3:listBucket"]
+  name             = "stop"
+  path             = "server"
+  method           = "DELETE"
+  iam_actions      = ["s3:listBucket"]
 }
 
 module "server_status" {
@@ -28,10 +28,10 @@ module "server_status" {
   account_id       = data.aws_caller_identity.current.account_id
   rest_api_id      = aws_api_gateway_rest_api.minecraft.id
   rest_api_root_id = aws_api_gateway_rest_api.minecraft.root_resource_id
-  name = "status"
-  path = "server"
-  method = "GET"
-  iam_actions = ["s3:listBucket"]
+  name             = "status"
+  path             = "server"
+  method           = "GET"
+  iam_actions      = ["s3:listBucket"]
 }
 
 module "servers_list" {
@@ -40,8 +40,8 @@ module "servers_list" {
   account_id       = data.aws_caller_identity.current.account_id
   rest_api_id      = aws_api_gateway_rest_api.minecraft.id
   rest_api_root_id = aws_api_gateway_rest_api.minecraft.root_resource_id
-  name = "list"
-  path = "servers"
-  method = "GET"
-  iam_actions = ["s3:listBucket"]
+  name             = "list"
+  path             = "servers"
+  method           = "GET"
+  iam_actions      = ["s3:listBucket"]
 }
