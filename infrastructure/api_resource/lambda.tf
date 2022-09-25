@@ -13,30 +13,30 @@ data "aws_iam_policy_document" "lambda" {
   }
 }
 
-data "aws_iam_policy_document" "iam_role" {
-  statement {
-    effect = "Allow"
-    actions = var.iam_actions
-    resources = [
-      data.aws_s3_bucket.minecraft.arn
-    ]
-  }
-}
+#data "aws_iam_policy_document" "iam_role" {
+#  statement {
+#    effect = "Allow"
+#    actions = var.iam_actions
+#    resources = [
+#      data.aws_s3_bucket.minecraft.arn
+#    ]
+#  }
+#}
 
-resource "aws_iam_policy" "iam_role" {
-  name   = "allows_for_${var.name}"
-  policy = data.aws_iam_policy_document.iam_role.json
-}
+#resource "aws_iam_policy" "iam_role" {
+#  name   = "allows_for_${var.name}"
+#  policy = data.aws_iam_policy_document.iam_role.json
+#}
 
 resource "aws_iam_role" "iam_role" {
   name               =  var.name
   assume_role_policy = data.aws_iam_policy_document.lambda.json
 }
 
-resource "aws_iam_role_policy_attachment" "iam_role" {
-  role       = aws_iam_role.iam_role.name
-  policy_arn = aws_iam_policy.iam_role.arn
-}
+#resource "aws_iam_role_policy_attachment" "iam_role" {
+#  role       = aws_iam_role.iam_role.name
+#  policy_arn = aws_iam_policy.iam_role.arn
+#}
 
 resource "aws_iam_role_policy_attachment" "lambda_policy" {
   role       = aws_iam_role.iam_role.name
@@ -54,4 +54,8 @@ resource "aws_lambda_function" "function" {
       BUCKET = var.bucket
     }
   }
+
+  depends_on = [
+    aws_ecr_repository.repository
+  ]
 }

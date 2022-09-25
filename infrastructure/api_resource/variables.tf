@@ -1,4 +1,4 @@
-variable "bucket" {}
+#variable "bucket" {}
 variable "account_id" {}
 variable "region" {}
 variable "rest_api_id" {}

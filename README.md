@@ -43,3 +43,5 @@ When all users leave, the server will shut down after the defined period.
   - create task / start server
     - create route53 record
   - rcon
+- pipeline:
+  - lamdba depends on image, image depends on ecr -> deadlock
