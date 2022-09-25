@@ -27,7 +27,7 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 		return wrapError(http.StatusInternalServerError, err)
 	}
 
-	fmt.Print("starting server")
+	fmt.Print("starting server\n")
 	err = server.Start()
 	if err != nil {
 		return wrapError(http.StatusInternalServerError, err)

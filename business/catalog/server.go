@@ -154,11 +154,15 @@ func (S Server) Start() error {
 		return errors.New(fmt.Sprintf("found already running task with ARN: %s", *task.TaskArn))
 	}
 
-	fmt.Print("creating task set")
-	_, err = S.EcsClient.CreateTaskSet(context.TODO(), &ecs.CreateTaskSetInput{
+	fmt.Print("creating task set\n")
+	output, err := S.EcsClient.CreateTaskSet(context.TODO(), &ecs.CreateTaskSetInput{
 		Cluster:        &S.Cluster,
 		TaskDefinition: &S.Name,
 	})
+	fmt.Printf("creatTaskSet output: %+v with error: %v\n", output, err)
+	if err != nil {
+		return errors.Wrap(err, "creating task set")
+	}
 
 	ip := ""
 	start := time.Now()
@@ -167,14 +171,14 @@ func (S Server) Start() error {
 			return errors.New("timeout waiting for server to get IP")
 		}
 		task, err = S.getRunningTask()
-		fmt.Printf("loop: task: %+v err: %v", task, err)
+		fmt.Printf("loop: task: %+v err: %v\n", task, err)
 		if task == nil {
 			continue // no running task yet
 		}
-		fmt.Printf("looping over containers")
+		fmt.Print("looping over containers\n")
 		for _, container := range task.Containers {
 			for _, binding := range container.NetworkBindings {
-				fmt.Printf("looping over binding: %+v for container: %+v", binding, container)
+				fmt.Printf("looping over binding: %+v for container: %+v\n", binding, container)
 				if *binding.BindIP != "" {
 					ip = *binding.BindIP
 					break
@@ -188,6 +192,6 @@ func (S Server) Start() error {
 			break
 		}
 	}
-	fmt.Print("creating DNS record")
+	fmt.Print("creating DNS record\n")
 	return errors.Wrap(S.createOrUpdateDNSRecord(ip), "setting DNS record")
 }
