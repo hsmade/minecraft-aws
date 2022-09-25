@@ -11,7 +11,7 @@ resource "aws_ecs_cluster" "minecraft" {
 
   configuration {
     execute_command_configuration {
-      logging    = "OVERRIDE"
+      logging = "OVERRIDE"
 
       log_configuration {
         cloud_watch_encryption_enabled = true
@@ -228,6 +228,15 @@ resource "aws_s3_bucket_policy" "main_bucket" {
 
 resource "aws_route53_zone" "domain" {
   name = var.domain_name
+}
+
+resource "aws_route53_record" "soa" {
+  allow_overwrite = true
+  name            = var.domain_name
+  type            = "SOA"
+  zone_id         = aws_route53_zone.domain.id
+  records         = aws_route53_zone.domain.name_servers
+  ttl             = 30
 }
 
 data "aws_vpc" "main" {}

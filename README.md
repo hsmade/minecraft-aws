@@ -1,20 +1,14 @@
 # minecraft servers in AWS
 This project manages different minecraft servers in AWS.
-It stores them in S3 and runs them in ECS FARGATE.
+It stores them in EFS and runs them in ECS FARGATE.
 
-Servers run as ECS FARGATE tasks.
-* `business/containers/task.go` implements a template for creating these tasks. It takes a template struct as input,
-which is loaded from a file on S3.
-Then a task is created with the rendered template.
-* `business/containers/status.go` implements getting the status of the current running task
-* `business/containers/manage.go` implements the starting and stopping of the tasks
-* `business/containers/rcon.go` implements sending commands to a running server
+The server definitions are implemented as ECS task definitions.
+Running them creates a task in ECS, and assigns a dns record to the public IP.
+When you shut a server down, the DNS record is removed, and the task stopped.
 
-The task that is started has the following containers:
-* setup - downloads the archive from S3 and extracts it in the shared volume
-* main - runs the minecraft server from the shared volume; depends on setup completing successfully
-* backup - runs backups on an interval; depends on the main container being started
-* teardown - creates an archive from the shared volume and uploads it; depends on the main container being in a completed state.
+There is a backup process that backs up to S3, with retention
+This backup only backs things up if there are users in the server.
+When all users leave, the server will shut down after the defined period.
 
 ## Secrets
 * `ECR` name of the ECR (1234567890.dkr.ecr.<region>.amazonaws.com)
@@ -32,6 +26,7 @@ The task that is started has the following containers:
 ## Cost
 ### continuous costs
 - route53 zone: 0.50 per month
+- efs
 
 ## Todo
 - define permissions above
@@ -39,7 +34,7 @@ The task that is started has the following containers:
 - current docker image will download the server and install it, every time. This takes too long
 - ecs:
   - rclone config for backup
-  - add user whitelist (env vars for server.properties?)
+  - come up with a way to load servers from file/secret, in TF
 - web:
   - list servers (task definitions), with status (tasks)
   - stop task / stop server

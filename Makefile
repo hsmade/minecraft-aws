@@ -1,11 +1,8 @@
-.PHONY: build
-build: storage_list
+LAMBDA_HANDLERS = server_start server_stop server_status servers_list
 
-# FIXME: detect changes
-.PHONY: storage_list
-storage_list:
-	docker build --platform linux/amd64 --build-arg app=storage_list -t $(ECR)/storage_list .
-	docker push $(ECR)/storage_list
+$(LAMBDA_HANDLERS):
+	docker build --platform linux/amd64 --build-arg app=$% -t $(ECR)/$% .
+	docker push $(ECR)/$%
 
 .PHONY: infrastructure
 infrastructure:

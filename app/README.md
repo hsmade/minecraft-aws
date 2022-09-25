@@ -1,11 +1,7 @@
 # App module
-The App module has all the lambda handlers and command line apps
-handlers:
-* list minecraft servers
-* run minecraft server
-* get minecraft server status
-* stop minecraft server
+The App module has all the lambda handlers:
 
-command line:
-* download archive - run before the main container starts
-* upload archive - run after the main container exits
+* `servers_list` list minecraft servers and their status
+* `server_start` start minecraft server
+* `server_status` get minecraft server status
+* `server_stop` stop minecraft server

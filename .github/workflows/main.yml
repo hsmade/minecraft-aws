@@ -4,7 +4,15 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 jobs:
-  storage_list:
+  lambda_handlers:
+    strategy:
+      matrix:
+        command: [
+           "server_start",
+           "server_stop",
+           "server_status",
+           "servers_list",
+        ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -18,7 +26,7 @@ jobs:
       - shell: bash
         env:
           ECR: ${{ steps.login-ecr.outputs.registry }}
-        run: make storage_list
+        run: make ${{ matrix.command }}
   infrastructure:
     runs-on: ubuntu-latest
     steps:
