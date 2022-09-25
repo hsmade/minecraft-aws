@@ -4,7 +4,7 @@ RUN apk add --no-cache ca-certificates
 RUN adduser -S -u 1000 user
 COPY . /app/
 WORKDIR /app
-RUN CGO_ENABLED=0 go build app/$app/*.go
+RUN CGO_ENABLED=0 go build -o $app app/$app/*.go
 
 FROM scratch
 ARG app
