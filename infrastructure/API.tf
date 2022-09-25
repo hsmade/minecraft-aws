@@ -41,6 +41,7 @@ module "server_start" {
     "iam:PassRole", # FIXME: for role/ecs_execution_role
     "ecs:ListTasks",
     "ecs:DescribeTasks",
+    "ec2:DescribeNetworkInterfaces",
     "route53:ListResourceRecordSets",
     "route53:ChangeResourceRecordSets",
   ]
