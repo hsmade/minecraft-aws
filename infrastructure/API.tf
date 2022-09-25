@@ -36,7 +36,7 @@ module "server_start" {
   path         = "server"
   method       = "PUT"
   iam_actions = [
-    "ecs:CreateTaskSet",
+    "ecs:RunTask",
     "ecs:ListTasks",
     "ecs:DescribeTasks",
     "route53:ListResourceRecordSets",

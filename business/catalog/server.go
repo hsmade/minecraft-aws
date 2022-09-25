@@ -155,11 +155,12 @@ func (S Server) Start() error {
 	}
 
 	fmt.Print("creating task set\n")
-	output, err := S.EcsClient.CreateTaskSet(context.TODO(), &ecs.CreateTaskSetInput{
+	output, err := S.EcsClient.RunTask(context.TODO(), &ecs.RunTaskInput{
 		Cluster:        &S.Cluster,
 		TaskDefinition: &S.Name,
+		Count:          aws.Int32(1),
 	})
-	fmt.Printf("creatTaskSet output: %+v with error: %v\n", output, err)
+	fmt.Printf("RunTask output: %+v with error: %v\n", output, err)
 	if err != nil {
 		return errors.Wrap(err, "creating task set")
 	}
