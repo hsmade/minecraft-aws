@@ -1,8 +1,8 @@
 LAMBDA_HANDLERS = server_start server_stop server_status servers_list
 
 $(LAMBDA_HANDLERS):
-	docker build --platform linux/amd64 --build-arg app=$% -t $(ECR)/$% .
-	docker push $(ECR)/$%
+	docker build --platform linux/amd64 --build-arg app=$@ -t $(ECR)/$@ .
+	docker push $(ECR)/$@
 
 .PHONY: infrastructure
 infrastructure:
