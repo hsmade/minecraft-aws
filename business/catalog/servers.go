@@ -58,3 +58,15 @@ func (S Servers) ListServers() ([]*Server, error) {
 
 	return servers, nil
 }
+
+// GetServer returns a server's instance
+func (S Servers) GetServer(name string) (*Server, error) {
+	// FIXME: check if server exists
+	return &Server{
+		Name:          name,
+		Cluster:       S.Cluster,
+		DNSZoneID:     S.DNSZoneID,
+		EcsClient:     S.EcsClient,
+		Route53Client: S.Route53Client,
+	}, nil
+}

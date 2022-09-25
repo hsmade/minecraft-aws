@@ -1,13 +1,9 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/ecs"
-	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"minecraft-catalog/business/catalog"
 	"net/http"
 )
@@ -20,20 +16,20 @@ func wrapError(status int, err error) (events.APIGatewayProxyResponse, error) {
 }
 
 func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	servers, err := catalog.New()
 	if err != nil {
 		return wrapError(http.StatusInternalServerError, err)
 	}
 
-	ecsClient := ecs.NewFromConfig(cfg)
-	route53Client := route53.New(route53.Options{})
-
-	server := catalog.Server{
-		Name:          req.QueryStringParameters["name"],
-		EcsClient:     ecsClient,
-		Route53Client: route53Client,
+	server, err := servers.GetServer(req.QueryStringParameters["name"])
+	if err != nil {
+		return wrapError(http.StatusInternalServerError, err)
 	}
+
 	status, err := server.Status()
+	if err != nil {
+		return wrapError(http.StatusInternalServerError, err)
+	}
 
 	body, err := json.Marshal(status)
 	if err != nil {
