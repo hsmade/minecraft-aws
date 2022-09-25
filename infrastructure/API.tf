@@ -4,11 +4,9 @@ data "external" "git_checkout" {
 
 resource "aws_api_gateway_deployment" "deployment" {
   rest_api_id = aws_api_gateway_rest_api.minecraft.id
-
   triggers = {
     redeployment = data.external.git_checkout.result.sha
   }
-
   lifecycle {
     create_before_destroy = true
   }
@@ -35,7 +33,13 @@ module "server_start" {
   name        = "server_start"
   path        = "server"
   method      = "PUT"
-  iam_actions = ["s3:listBucket"]
+  iam_actions = [
+    "ecs:CreateTaskSet",
+    "ecs:ListTasks",
+    "ecs:DescribeTasks",
+    "route53:ListResourceRecordSets",
+    "route53:ChangeResourceRecordSets",
+  ]
 }
 
 module "server_stop" {
@@ -47,7 +51,13 @@ module "server_stop" {
   name        = "server_stop"
   path        = "server"
   method      = "DELETE"
-  iam_actions = ["s3:listBucket"]
+  iam_actions = [
+    "ecs:StopTask",
+    "ecs:ListTasks",
+    "ecs:DescribeTasks",
+    "route53:ListResourceRecordSets",
+    "route53:ChangeResourceRecordSets",
+  ]
 }
 
 module "server_status" {
@@ -59,7 +69,10 @@ module "server_status" {
   name        = "server_status"
   path        = "server"
   method      = "GET"
-  iam_actions = ["s3:listBucket"]
+  iam_actions = [
+    "ecs:ListTasks",
+    "ecs:DescribeTasks",
+  ]
 }
 
 resource "aws_api_gateway_resource" "servers" {
@@ -77,5 +90,9 @@ module "servers_list" {
   name        = "servers_list"
   path        = "servers"
   method      = "GET"
-  iam_actions = ["s3:listBucket"]
+  iam_actions = [
+    "ecs:ListTaskDefinitionFamilies",
+    "ecs:ListTasks",
+    "ecs:DescribeTasks",
+  ]
 }
