@@ -218,6 +218,7 @@ func (S Server) Start() error {
 
 						if output.NetworkInterfaces[0].Association == nil {
 							fmt.Println("association is still nil")
+							continue
 						}
 
 						fmt.Printf("network interfaces: %+v\n", output.NetworkInterfaces)
