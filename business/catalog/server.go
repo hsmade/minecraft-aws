@@ -86,6 +86,8 @@ func (S Server) Stop() error {
 		return errors.New("no running task found")
 	}
 
+	errDNS := S.deleteDNSRecord() // needs to happen first, save error for later
+
 	_, err = S.EcsClient.StopTask(context.TODO(), &ecs.StopTaskInput{
 		Task:    task.TaskArn,
 		Cluster: &S.Cluster,
@@ -94,7 +96,7 @@ func (S Server) Stop() error {
 		return errors.Wrap(err, "failed to stop task")
 	}
 
-	return errors.Wrap(S.deleteDNSRecord(), "deleting DNS record")
+	return errors.Wrap(errDNS, "deleting DNS record")
 }
 
 func (S Server) deleteDNSRecord() error {
