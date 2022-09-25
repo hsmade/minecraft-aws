@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"minecraft-catalog/business/catalog"
@@ -27,7 +28,6 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 	}
 
 	serverList, err := servers.ListServers()
-	body, err := json.Marshal(serverList)
 	if err != nil {
 		return wrapError(http.StatusInternalServerError, err)
 	}
@@ -38,11 +38,18 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 			Name:   server.Name,
 			Status: "NONE",
 		}
+
+		fmt.Printf("checking status for server '%s'\n", server.Name)
 		status, err := server.Status()
 		if err != nil {
 			response.Status = status.Status
 		}
 		responses = append(responses, response)
+	}
+
+	body, err := json.Marshal(responses)
+	if err != nil {
+		return wrapError(http.StatusInternalServerError, err)
 	}
 
 	return events.APIGatewayProxyResponse{
