@@ -34,13 +34,11 @@ func New() (*Servers, error) {
 	}
 
 	return &Servers{
-		Cluster:   cluster,
-		DNSZoneID: dnsZoneID,
-		EcsClient: ecs.NewFromConfig(cfg),
-		Route53Client: route53.New(route53.Options{
-			Region: cfg.Region,
-		}),
-		Ec2Client: ec2.NewFromConfig(cfg),
+		Cluster:       cluster,
+		DNSZoneID:     dnsZoneID,
+		EcsClient:     ecs.NewFromConfig(cfg),
+		Route53Client: route53.NewFromConfig(cfg),
+		Ec2Client:     ec2.NewFromConfig(cfg),
 	}, nil
 }
 
