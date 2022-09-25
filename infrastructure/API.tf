@@ -37,6 +37,7 @@ module "server_start" {
   method       = "PUT"
   iam_actions = [
     "ecs:RunTask",
+    "iam:PassRole", # FIXME: for role/ecs_execution_role
     "ecs:ListTasks",
     "ecs:DescribeTasks",
     "route53:ListResourceRecordSets",
