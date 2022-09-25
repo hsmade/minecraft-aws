@@ -3,6 +3,7 @@ package catalog
 import (
 	"context"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/pkg/errors"
@@ -14,6 +15,7 @@ type Servers struct {
 	DNSZoneID     string
 	EcsClient     ecsClient
 	Route53Client route53Client
+	Ec2Client     ec2Client
 }
 
 func New() (*Servers, error) {
@@ -36,6 +38,7 @@ func New() (*Servers, error) {
 		DNSZoneID:     dnsZoneID,
 		EcsClient:     ecs.NewFromConfig(cfg),
 		Route53Client: route53.New(route53.Options{}),
+		Ec2Client:     ec2.NewFromConfig(cfg),
 	}, nil
 }
 
@@ -53,6 +56,7 @@ func (S Servers) ListServers() ([]*Server, error) {
 			DNSZoneID:     S.DNSZoneID,
 			EcsClient:     S.EcsClient,
 			Route53Client: S.Route53Client,
+			ec2Client:     S.Ec2Client,
 		})
 	}
 
@@ -68,5 +72,6 @@ func (S Servers) GetServer(name string) (*Server, error) {
 		DNSZoneID:     S.DNSZoneID,
 		EcsClient:     S.EcsClient,
 		Route53Client: S.Route53Client,
+		ec2Client:     S.Ec2Client,
 	}, nil
 }

@@ -3,6 +3,7 @@ package catalog
 import (
 	"context"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	ecsTypes "github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
@@ -22,6 +23,7 @@ type Server struct {
 	DNSZoneID     string
 	EcsClient     ecsClient
 	Route53Client route53Client
+	ec2Client     ec2Client
 }
 
 type ServerStatus struct {
@@ -180,17 +182,43 @@ func (S Server) Start() error {
 		if time.Now().After(start.Add(timeout)) {
 			return errors.New("timeout waiting for server to get IP")
 		}
+
 		task, err = S.getRunningTask()
 		fmt.Printf("loop: task: %+v err: %v\n", task, err)
+
 		if task == nil {
 			continue // no running task yet
 		}
-		fmt.Print("looping over containers\n")
-		for _, container := range task.Containers {
-			for _, binding := range container.NetworkBindings {
-				fmt.Printf("looping over binding: %+v for container: %+v\n", binding, container)
-				if *binding.BindIP != "" {
-					ip = *binding.BindIP
+
+		fmt.Print("looping over attachments\n")
+		for _, attachment := range task.Attachments {
+			for _, detail := range attachment.Details {
+				fmt.Printf("looping over detail: %+v for attachment: %+v\n", detail, attachment)
+				if *detail.Name == "networkInterfaceId" && detail.Value != nil && *detail.Value != "" {
+					for {
+						if time.Now().After(start.Add(timeout)) {
+							return errors.New("timeout waiting for server to get IP")
+						}
+
+						output, err := S.ec2Client.DescribeNetworkInterfaces(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
+							NetworkInterfaceIds: []string{*detail.Value},
+						})
+						if err != nil {
+							fmt.Printf("DescribeNetworkInterfaces got error: %v\n", err)
+							continue
+						}
+
+						if len(output.NetworkInterfaces) == 0 {
+							fmt.Println("no network interfaces yet")
+							continue
+						}
+
+						fmt.Printf("network interfaces: %+v\n", output.NetworkInterfaces)
+						ip = *output.NetworkInterfaces[0].Association.PublicIp
+						break
+					}
+				}
+				if ip != "" {
 					break
 				}
 			}
@@ -201,7 +229,9 @@ func (S Server) Start() error {
 		if ip != "" {
 			break
 		}
+		time.Sleep(1 * time.Second)
 	}
+
 	fmt.Print("creating DNS record\n")
 	return errors.Wrap(S.createOrUpdateDNSRecord(ip), "setting DNS record")
 }

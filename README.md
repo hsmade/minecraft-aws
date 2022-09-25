@@ -35,6 +35,8 @@ When all users leave, the server will shut down after the defined period.
 - ecs:
   - rclone config for backup
   - come up with a way to load servers from file/secret, in TF
+  - add SG for ECS
+  - limit iam:PassRole
 - web:
   - list servers (task definitions), with status (tasks)
   - stop task / stop server
