@@ -98,12 +98,15 @@ func (S Server) Stop() error {
 }
 
 func (S Server) deleteDNSRecord() error {
-	output, _ := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
+	output, err := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    &S.DNSZoneID,
 		MaxItems:        aws.Int32(1),
 		StartRecordName: &S.Name,
 		StartRecordType: "A",
 	})
+	if err != nil {
+		return errors.Wrap(err, "listing recordsets")
+	}
 
 	if len(output.ResourceRecordSets) == 0 {
 		return nil
