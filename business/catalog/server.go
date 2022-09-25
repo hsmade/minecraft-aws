@@ -166,6 +166,9 @@ func (S Server) Start() error {
 			return errors.New("timeout waiting for server to get IP")
 		}
 		task, _ = S.getRunningTask()
+		if task == nil {
+			continue // no running task yet
+		}
 		for _, container := range task.Containers {
 			for _, binding := range container.NetworkBindings {
 				if *binding.BindIP != "" {
