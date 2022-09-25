@@ -58,6 +58,7 @@ resource "aws_lambda_function" "function" {
     variables = {
       CLUSTER = var.cluster_name
       DNS_ZONE_ID = var.dns_zone_id
+      SUBNETS = join(",", var.subnets)
     }
   }
 

@@ -9,6 +9,8 @@ import (
 	route53Types "github.com/aws/aws-sdk-go-v2/service/route53/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/pkg/errors"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -159,6 +161,13 @@ func (S Server) Start() error {
 		Cluster:        &S.Cluster,
 		TaskDefinition: &S.Name,
 		Count:          aws.Int32(1),
+		NetworkConfiguration: &ecsTypes.NetworkConfiguration{
+			AwsvpcConfiguration: &ecsTypes.AwsVpcConfiguration{
+				AssignPublicIp: "ENABLED",
+				Subnets:        strings.Split(os.Getenv("SUBNETS"), ","),
+				SecurityGroups: nil,
+			},
+		},
 	})
 	fmt.Printf("RunTask output: %+v with error: %v\n", output, err)
 	if err != nil {

@@ -8,6 +8,9 @@ variable "path" {}
 variable "method" {}
 variable "cluster_name" {}
 variable "dns_zone_id" {}
+variable "subnets" {
+  type = list(string)
+}
 variable "iam_actions" {
   type = list(string)
 }
