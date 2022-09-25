@@ -25,14 +25,16 @@ resource "aws_api_gateway_resource" "server" {
 }
 
 module "server_start" {
-  source      = "./api_resource"
-  region      = data.aws_region.default.name
-  account_id  = data.aws_caller_identity.current.account_id
-  resource_id = aws_api_gateway_resource.server.id
-  rest_api_id = aws_api_gateway_rest_api.minecraft.id
-  name        = "server_start"
-  path        = "server"
-  method      = "PUT"
+  source       = "./api_resource"
+  region       = data.aws_region.default.name
+  account_id   = data.aws_caller_identity.current.account_id
+  resource_id  = aws_api_gateway_resource.server.id
+  rest_api_id  = aws_api_gateway_rest_api.minecraft.id
+  cluster_name = aws_ecs_cluster.minecraft.name
+  dns_zone_id  = aws_route53_zone.domain.id
+  name         = "server_start"
+  path         = "server"
+  method       = "PUT"
   iam_actions = [
     "ecs:CreateTaskSet",
     "ecs:ListTasks",
@@ -43,14 +45,16 @@ module "server_start" {
 }
 
 module "server_stop" {
-  source      = "./api_resource"
-  region      = data.aws_region.default.name
-  account_id  = data.aws_caller_identity.current.account_id
-  resource_id = aws_api_gateway_resource.server.id
-  rest_api_id = aws_api_gateway_rest_api.minecraft.id
-  name        = "server_stop"
-  path        = "server"
-  method      = "DELETE"
+  source       = "./api_resource"
+  region       = data.aws_region.default.name
+  account_id   = data.aws_caller_identity.current.account_id
+  resource_id  = aws_api_gateway_resource.server.id
+  rest_api_id  = aws_api_gateway_rest_api.minecraft.id
+  cluster_name = aws_ecs_cluster.minecraft.name
+  dns_zone_id  = aws_route53_zone.domain.id
+  name         = "server_stop"
+  path         = "server"
+  method       = "DELETE"
   iam_actions = [
     "ecs:StopTask",
     "ecs:ListTasks",
@@ -61,14 +65,16 @@ module "server_stop" {
 }
 
 module "server_status" {
-  source      = "./api_resource"
-  region      = data.aws_region.default.name
-  account_id  = data.aws_caller_identity.current.account_id
-  resource_id = aws_api_gateway_resource.server.id
-  rest_api_id = aws_api_gateway_rest_api.minecraft.id
-  name        = "server_status"
-  path        = "server"
-  method      = "GET"
+  source       = "./api_resource"
+  region       = data.aws_region.default.name
+  account_id   = data.aws_caller_identity.current.account_id
+  resource_id  = aws_api_gateway_resource.server.id
+  rest_api_id  = aws_api_gateway_rest_api.minecraft.id
+  cluster_name = aws_ecs_cluster.minecraft.name
+  dns_zone_id  = aws_route53_zone.domain.id
+  name         = "server_status"
+  path         = "server"
+  method       = "GET"
   iam_actions = [
     "ecs:ListTasks",
     "ecs:DescribeTasks",
@@ -82,14 +88,16 @@ resource "aws_api_gateway_resource" "servers" {
 }
 
 module "servers_list" {
-  source      = "./api_resource"
-  region      = data.aws_region.default.name
-  account_id  = data.aws_caller_identity.current.account_id
-  resource_id = aws_api_gateway_resource.servers.id
-  rest_api_id = aws_api_gateway_rest_api.minecraft.id
-  name        = "servers_list"
-  path        = "servers"
-  method      = "GET"
+  source       = "./api_resource"
+  region       = data.aws_region.default.name
+  account_id   = data.aws_caller_identity.current.account_id
+  resource_id  = aws_api_gateway_resource.servers.id
+  rest_api_id  = aws_api_gateway_rest_api.minecraft.id
+  cluster_name = aws_ecs_cluster.minecraft.name
+  dns_zone_id  = aws_route53_zone.domain.id
+  name         = "servers_list"
+  path         = "servers"
+  method       = "GET"
   iam_actions = [
     "ecs:ListTaskDefinitionFamilies",
     "ecs:ListTasks",
