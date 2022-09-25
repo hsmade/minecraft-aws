@@ -230,14 +230,14 @@ resource "aws_route53_zone" "domain" {
   name = var.domain_name
 }
 
-resource "aws_route53_record" "soa" {
-  allow_overwrite = true
-  name            = var.domain_name
-  type            = "SOA"
-  zone_id         = aws_route53_zone.domain.id
-  records         = aws_route53_zone.domain.name_servers
-  ttl             = 30
-}
+#resource "aws_route53_record" "soa" {
+#  zone_id         = aws_route53_zone.domain.id
+#  name            = var.domain_name
+#  type            = "SOA"
+#  ttl             = 30
+#  records         = aws_route53_zone.domain.name_servers
+#  allow_overwrite = true
+#}
 
 data "aws_vpc" "main" {}
 data "aws_subnets" "subnets" {
