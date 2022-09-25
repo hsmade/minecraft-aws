@@ -1,19 +1,13 @@
-resource "aws_api_gateway_resource" "resource" {
-  parent_id   = var.rest_api_root_id
-  path_part   = var.path
-  rest_api_id = var.rest_api_id
-}
-
 resource "aws_api_gateway_method" "method" {
   authorization = "NONE"
   http_method   = var.method
-  resource_id   = aws_api_gateway_resource.resource.id
+  resource_id   = var.resource_id
   rest_api_id   = var.rest_api_id
 }
 
 resource "aws_api_gateway_integration" "integration" {
   http_method             = aws_api_gateway_method.method.http_method
-  resource_id             = aws_api_gateway_resource.resource.id
+  resource_id             = var.resource_id
   rest_api_id             = var.rest_api_id
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
@@ -42,7 +36,7 @@ resource "aws_api_gateway_deployment" "deployment" {
     #       resources will show a difference after the initial implementation.
     #       It will stabilize to only change when resources change afterwards.
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.resource.id,
+      var.resource_id,
       aws_api_gateway_method.method.id,
       aws_api_gateway_integration.integration.id,
     ]))
