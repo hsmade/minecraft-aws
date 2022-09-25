@@ -37,6 +37,7 @@ When all users leave, the server will shut down after the defined period.
   - come up with a way to load servers from file/secret, in TF
   - add SG for ECS
   - limit iam:PassRole
+  - delete task: `deleting DNS record: getting IP: timeout waiting for server to get IP`
 - web:
   - list servers (task definitions), with status (tasks)
   - stop task / stop server
