@@ -51,7 +51,7 @@ resource "aws_lambda_function" "function" {
   package_type  = "Image"
   environment {
     variables = {
-      BUCKET = var.bucket
+#      BUCKET = var.bucket
     }
   }
 
