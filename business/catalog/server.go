@@ -140,12 +140,16 @@ func (S Server) modifyDNSRecord(ip string, action route53Types.ChangeAction) err
 }
 
 func (S Server) createOrUpdateDNSRecord(ip string) error {
-	output, _ := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
+	output, err := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    &S.DNSZoneID,
 		MaxItems:        aws.Int32(1),
 		StartRecordName: &S.Name,
 		StartRecordType: "A",
 	})
+	if err != nil {
+		return errors.Wrap(err, "listing recordsets")
+	}
+
 	if len(output.ResourceRecordSets) == 0 {
 		return errors.Wrap(S.modifyDNSRecord(ip, route53Types.ChangeActionCreate), "creating DNS record")
 	}
