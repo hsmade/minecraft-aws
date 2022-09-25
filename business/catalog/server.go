@@ -33,13 +33,13 @@ func (S Server) getRunningTask() (*ecsTypes.Task, error) {
 		Cluster: &S.Cluster,
 		Family:  &S.Name,
 	})
-	if len(output.TaskArns) == 0 {
-		return nil, errors.New("no tasks found")
-	}
-
 	if err != nil {
 		return nil, errors.Wrap(err, "listing tasks")
 	}
+	if len(output.TaskArns) == 0 {
+		return nil, nil
+	}
+
 	tasks, err := S.EcsClient.DescribeTasks(context.TODO(), &ecs.DescribeTasksInput{
 		Tasks:   output.TaskArns,
 		Cluster: &S.Cluster,
@@ -54,7 +54,7 @@ func (S Server) getRunningTask() (*ecsTypes.Task, error) {
 		}
 		return &task, nil
 	}
-	return nil, errors.New("no running tasks found")
+	return nil, nil
 }
 
 func (S Server) Status() (*ServerStatus, error) {

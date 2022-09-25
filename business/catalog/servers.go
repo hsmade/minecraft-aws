@@ -61,7 +61,7 @@ func (S Servers) ListServers() ([]*Server, error) {
 
 // GetServer returns a server's instance
 func (S Servers) GetServer(name string) (*Server, error) {
-	// FIXME: check if server exists
+	// FIXME: check if server/task family exists
 	return &Server{
 		Name:          name,
 		Cluster:       S.Cluster,
