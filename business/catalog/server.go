@@ -216,6 +216,10 @@ func (S Server) Start() error {
 							continue
 						}
 
+						if output.NetworkInterfaces[0].Association == nil {
+							fmt.Println("association is still nil")
+						}
+
 						fmt.Printf("network interfaces: %+v\n", output.NetworkInterfaces)
 						ip = *output.NetworkInterfaces[0].Association.PublicIp
 						break
