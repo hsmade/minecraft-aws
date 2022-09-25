@@ -101,7 +101,7 @@ func (S Server) deleteDNSRecord() error {
 	output, err := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    &S.DNSZoneID,
 		MaxItems:        aws.Int32(1),
-		StartRecordName: &S.Name,
+		StartRecordName: aws.String(S.Name + "." + os.Getenv("DNS_ZONE")),
 		StartRecordType: "A",
 	})
 	if err != nil {
