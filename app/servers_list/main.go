@@ -37,6 +37,7 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 	for _, server := range serverList {
 		response := Response{
 			Name:   server.Name,
+			Tags:   server.Tags,
 			Status: "NONE",
 		}
 

@@ -57,8 +57,9 @@ func (S Servers) ListServers() ([]*Server, error) {
 			Include:        []ecsTypes.TaskDefinitionField{"TAGS"},
 		})
 		if err != nil {
-			fmt.Printf("could not get task definition for family '%s': %v", name, err)
+			fmt.Printf("could not get task definition for family '%s': %v\n", name, err)
 		}
+		fmt.Printf("task definition for family '%s': %+v\n", name, output)
 
 		tags := make(map[string]string, len(output.Tags))
 		for _, tag := range output.Tags {
