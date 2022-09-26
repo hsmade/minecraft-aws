@@ -1,7 +1,12 @@
 resource "aws_ecs_task_definition" "task" {
-  execution_role_arn       = var.execution_role_arn
-  task_role_arn            = var.sidecars_role_arn
-  family                   = var.name
+  execution_role_arn = var.execution_role_arn
+  task_role_arn      = var.sidecars_role_arn
+  family             = var.name
+  tags = merge({
+    "minecraft-version" : var.minecraft_version,
+    "forge-version" : var.forge_version,
+    "server-type" : var.minecraft_type,
+  }, var.tags)
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   volume {

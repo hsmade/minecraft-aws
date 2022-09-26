@@ -21,9 +21,10 @@ type Server struct {
 	Name          string // task definition family name
 	Cluster       string
 	DNSZoneID     string
+	Tags          map[string]string
 	EcsClient     ecsClient
 	Route53Client route53Client
-	ec2Client     ec2Client
+	Ec2Client     ec2Client
 }
 
 type ServerStatus struct {
@@ -194,7 +195,7 @@ func (S Server) getIP() (string, error) {
 							return ip, errors.New("timeout waiting for server to get IP")
 						}
 
-						output, err := S.ec2Client.DescribeNetworkInterfaces(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
+						output, err := S.Ec2Client.DescribeNetworkInterfaces(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
 							NetworkInterfaceIds: []string{*detail.Value},
 						})
 						if err != nil {
@@ -233,9 +234,11 @@ func (S Server) Start() error {
 
 	fmt.Print("creating task set\n")
 	output, err := S.EcsClient.RunTask(context.TODO(), &ecs.RunTaskInput{
-		Cluster:        &S.Cluster,
-		TaskDefinition: &S.Name,
-		Count:          aws.Int32(1),
+		Cluster:              &S.Cluster,
+		TaskDefinition:       &S.Name,
+		EnableECSManagedTags: true,
+		//EnableExecuteCommand: true,
+		Count: aws.Int32(1),
 		NetworkConfiguration: &ecsTypes.NetworkConfiguration{
 			AwsvpcConfiguration: &ecsTypes.AwsVpcConfiguration{
 				AssignPublicIp: "ENABLED",

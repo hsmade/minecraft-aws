@@ -2,9 +2,11 @@ package catalog
 
 import (
 	"context"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
+	ecsTypes "github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/pkg/errors"
 	"os"
@@ -50,13 +52,27 @@ func (S Servers) ListServers() ([]*Server, error) {
 	}
 	var servers []*Server
 	for _, name := range families.Families {
+		output, err := S.EcsClient.DescribeTaskDefinition(context.TODO(), &ecs.DescribeTaskDefinitionInput{
+			TaskDefinition: &name,
+			Include:        []ecsTypes.TaskDefinitionField{"TAGS"},
+		})
+		if err != nil {
+			fmt.Printf("could not get task definition for family '%s': %v", name, err)
+		}
+
+		tags := make(map[string]string, len(output.Tags))
+		for _, tag := range output.Tags {
+			tags[*tag.Key] = *tag.Value
+		}
+
 		servers = append(servers, &Server{
 			Name:          name,
 			Cluster:       S.Cluster,
 			DNSZoneID:     S.DNSZoneID,
+			Tags:          tags,
 			EcsClient:     S.EcsClient,
 			Route53Client: S.Route53Client,
-			ec2Client:     S.Ec2Client,
+			Ec2Client:     S.Ec2Client,
 		})
 	}
 
@@ -72,6 +88,6 @@ func (S Servers) GetServer(name string) (*Server, error) {
 		DNSZoneID:     S.DNSZoneID,
 		EcsClient:     S.EcsClient,
 		Route53Client: S.Route53Client,
-		ec2Client:     S.Ec2Client,
+		Ec2Client:     S.Ec2Client,
 	}, nil
 }

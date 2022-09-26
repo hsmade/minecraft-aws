@@ -17,8 +17,9 @@ func wrapError(status int, err error) (events.APIGatewayProxyResponse, error) {
 }
 
 type Response struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
+	Name   string            `json:"name"`
+	Status string            `json:"status"`
+	Tags   map[string]string `json:"tags"`
 }
 
 func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {

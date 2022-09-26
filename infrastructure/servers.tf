@@ -11,6 +11,10 @@ module "pim" {
   forge_version      = "39.0.59"
   subnets            = data.aws_subnets.subnets.ids
   whitelist          = var.whitelist
+  tags = {
+    "mod1": "1.2.3",
+    "mod2": "2.3.4",
+  }
 }
 
 module "test" {

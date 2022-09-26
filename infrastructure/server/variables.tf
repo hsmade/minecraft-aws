@@ -19,3 +19,7 @@ variable "subnets" {
 variable "whitelist" {
   type = list(string)
 }
+variable "tags" {
+  type = map(string)
+  default = {}
+}

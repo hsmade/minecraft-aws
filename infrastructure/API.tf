@@ -110,6 +110,7 @@ module "servers_list" {
   method       = "GET"
   iam_actions = [
     "ecs:ListTaskDefinitionFamilies",
+    "ecs:DescribeTaskDefinition",
     "ecs:ListTasks",
     "ecs:DescribeTasks",
   ]
