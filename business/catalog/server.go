@@ -71,9 +71,16 @@ func (S Server) Status() (*ServerStatus, error) {
 		return nil, errors.New("no running task found")
 	}
 
+	status := "NONE"
+	for _, container := range task.Containers {
+		if *container.Name != "main" {
+			continue
+		}
+		status = string(container.HealthStatus)
+	}
 	return &ServerStatus{
 		Name:   S.Name,
-		Status: *task.LastStatus,
+		Status: status,
 		taskID: *task.TaskArn,
 	}, nil
 }
