@@ -10,7 +10,7 @@ resource "aws_s3_bucket_acl" "site_bucket" {
 resource "aws_s3_bucket_cors_configuration" "site_bucket" {
   bucket = aws_s3_bucket.site_bucket.bucket
   cors_rule {
-    allowed_methods = ["*"]
+    allowed_methods = ["GET"]
     allowed_origins = [
       "https://${var.domain_name}"
     ]
