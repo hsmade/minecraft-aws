@@ -98,47 +98,6 @@ resource "aws_iam_role" "ecs_sidecars" {
   name               = "ecs_sidecars"
 }
 
-data "aws_iam_policy_document" "ecs_backup_restore" {
-  statement {
-    effect = "Deny"
-    actions = [
-      "s3:*",
-    ]
-    resources = [
-      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:/terraform/*",
-    ]
-  }
-  statement {
-    effect = "Allow"
-    actions = [
-      "s3:GetObject",
-      "s3:GetObjectVersion",
-      "s3:PutObject",
-      "s3:DeleteObject",
-      "s3:DeleteObjectVersion",
-      "s3:PutObjectACL",
-    ]
-    resources = [
-      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:/*",
-      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:",
-    ]
-  }
-  statement {
-    effect = "Allow"
-    actions = [
-      "s3:ListBucket",
-    ]
-    resources = [
-      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:",
-    ]
-  }
-}
-
-resource "aws_iam_policy" "ecs_backup_restore" {
-  policy = data.aws_iam_policy_document.ecs_backup_restore.json
-  name   = "ecs_backup_restore"
-}
-
 resource "aws_iam_role_policy_attachment" "backup_restore" {
   policy_arn = aws_iam_policy.ecs_backup_restore.arn
   role       = aws_iam_role.ecs_sidecars.name
@@ -177,49 +136,6 @@ resource "aws_iam_policy" "ecs_execution_role_rules" {
 resource "aws_iam_role_policy_attachment" "allow_ecr" {
   policy_arn = aws_iam_policy.ecs_execution_role_rules.arn
   role       = aws_iam_role.ecs_execution_role.name
-}
-
-data "aws_iam_policy_document" "main_bucket" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "s3:GetObject",
-      "s3:GetObjectVersion",
-    ]
-    principals {
-      identifiers = ["*"]
-      type        = "*"
-    }
-    resources = [
-      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}/*.png"
-    ]
-  }
-  statement {
-    effect = "Allow"
-    actions = [
-      "s3:GetObject",
-      "s3:GetObjectVersion",
-      "s3:PutObject",
-      "s3:DeleteObject",
-      "s3:DeleteObjectVersion",
-      "s3:PutObjectACL",
-    ]
-    principals {
-      identifiers = [
-        "arn:aws:iam::647334721350:role/ecs_sidecars",
-        "arn:aws:iam::647334721350:root",
-      ]
-      type = "AWS"
-    }
-    resources = [
-      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}/*.tgz"
-    ]
-  }
-}
-
-resource "aws_s3_bucket_policy" "main_bucket" {
-  bucket = aws_s3_bucket.backup_bucket.bucket
-  policy = data.aws_iam_policy_document.main_bucket.json
 }
 
 resource "aws_route53_zone" "domain" {
