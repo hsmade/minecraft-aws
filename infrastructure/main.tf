@@ -1,7 +1,3 @@
-data "aws_s3_bucket" "minecraft" {
-  bucket = var.bucket
-}
-
 resource "aws_cloudwatch_log_group" "ecs-cluster" {
   name = "minecraft"
 }
@@ -109,7 +105,7 @@ data "aws_iam_policy_document" "ecs_backup_restore" {
       "s3:*",
     ]
     resources = [
-      "arn:aws:s3:::${var.bucket}:/terraform/*",
+      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:/terraform/*",
     ]
   }
   statement {
@@ -123,8 +119,8 @@ data "aws_iam_policy_document" "ecs_backup_restore" {
       "s3:PutObjectACL",
     ]
     resources = [
-      "arn:aws:s3:::${var.bucket}:/*",
-      "arn:aws:s3:::${var.bucket}:",
+      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:/*",
+      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:",
     ]
   }
   statement {
@@ -133,7 +129,7 @@ data "aws_iam_policy_document" "ecs_backup_restore" {
       "s3:ListBucket",
     ]
     resources = [
-      "arn:aws:s3:::${var.bucket}:",
+      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:",
     ]
   }
 }
@@ -195,7 +191,7 @@ data "aws_iam_policy_document" "main_bucket" {
       type        = "*"
     }
     resources = [
-      "arn:aws:s3:::${var.bucket}/*.png"
+      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}/*.png"
     ]
   }
   statement {
@@ -216,13 +212,13 @@ data "aws_iam_policy_document" "main_bucket" {
       type = "AWS"
     }
     resources = [
-      "arn:aws:s3:::${var.bucket}/*.tgz"
+      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}/*.tgz"
     ]
   }
 }
 
 resource "aws_s3_bucket_policy" "main_bucket" {
-  bucket = var.bucket
+  bucket = aws_s3_bucket.backup_bucket.bucket
   policy = data.aws_iam_policy_document.main_bucket.json
 }
 

@@ -12,9 +12,8 @@ When all users leave, the server will shut down after the defined period.
 
 ## Secrets
 * `ECR` name of the ECR (1234567890.dkr.ecr.<region>.amazonaws.com)
-* `TFSTATE_BUCKET` name of the bucket
+* `TFSTATE_BUCKET` name of the bucket where the terraform state is stored (created manually)
 * `TFSTATE_REGION` name of the AWS region
-* `TF_VAR_bucket` name of the bucket
 * `TF_VAR_home_ip` IP used to restrict web UI to
 * `TF_VAR_domain_name` domain name used for minecraft servers
 * `AWS_ACCESS_KEY_ID`
@@ -32,18 +31,16 @@ When all users leave, the server will shut down after the defined period.
 - define permissions above
 - use iam role instead of user directly https://github.com/aws-actions/configure-aws-credentials#assuming-a-role
 - current docker image will download the server and install it, every time. This takes too long
-- ecs:
+- infra:
   - rclone config for backup
   - come up with a way to load servers from file/secret, in TF
-  - add SG for ECS
+  - add SG for ECS for EFS (now uses some default?)
   - limit iam:PassRole
   - delete task: `deleting DNS record: getting IP: timeout waiting for server to get IP`
-  - add tags
-    - minecraft version
-    - forge version
-    - list of mods
+  - add optional firewall for public IP
+  - fix soa record
 - web:
-  - list servers (task definitions), with status (tasks)
+  - list servers (task definitions), with status (tasks) and tags
   - stop task / stop server
     - run final backup
     - delete route53 record

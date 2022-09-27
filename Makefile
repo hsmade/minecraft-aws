@@ -11,3 +11,8 @@ infrastructure:
 	  -backend-config="bucket=$(TFSTATE_BUCKET)" \
 	  -backend-config="region=$(TFSTATE_REGION)" && \
 	terraform apply -auto-approve -input=false
+
+infrastructure/site:
+	cd web && \
+	npm run build && \
+	mv dist ../infrastructure/site

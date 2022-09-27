@@ -2,3 +2,4 @@
 infrastructure/.terraform/
 infrastructure/.terraform.lock.hcl
 storage_list
+infrastructure/site
