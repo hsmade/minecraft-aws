@@ -35,6 +35,7 @@ module "template_files" {
     server_start  = module.server_start.url
     server_status = module.server_status.url
     server_stop   = module.server_stop
+    domain_name   = aws_route53_zone.domain.name
   }
 }
 

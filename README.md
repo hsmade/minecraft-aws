@@ -40,6 +40,7 @@ When all users leave, the server will shut down after the defined period.
   - delete task: `deleting DNS record: getting IP: timeout waiting for server to get IP`
   - add optional firewall for public IP
   - fix soa record
+  - have a sidecar upload the thumbnail for a server?
 - web:
   - list servers (task definitions), with status (tasks) and tags
   - stop task / stop server
