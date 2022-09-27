@@ -16,6 +16,7 @@ When all users leave, the server will shut down after the defined period.
 * `TFSTATE_REGION` name of the AWS region
 * `TF_VAR_home_ip` IP used to restrict web UI to
 * `TF_VAR_domain_name` domain name used for minecraft servers
+* `TF_VAR_whitelist` minecraft users to whitelist
 * `AWS_ACCESS_KEY_ID`
 * `AWS_SECRET_ACCESS_KEY`
 

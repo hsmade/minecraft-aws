@@ -11,4 +11,5 @@ variable "domain_name" {
 variable "whitelist" {
   type        = list(string)
   description = "uuids or accounts to whitelist"
+  default = []
 }
