@@ -47,5 +47,5 @@ resource "aws_s3_object" "site" {
   source       = each.value.source_path
   content      = each.value.content
   etag         = each.value.digests.md5
-  acl          = "public_read"
+  acl          = "public-read"
 }
