@@ -14,5 +14,6 @@ infrastructure:
 
 infrastructure/site:
 	cd web && \
+	npm run install && \
 	npm run build && \
 	mv dist ../infrastructure/site
