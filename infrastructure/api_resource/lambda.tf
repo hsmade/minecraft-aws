@@ -60,7 +60,7 @@ resource "aws_lambda_function" "function" {
       DNS_ZONE_ID = var.dns_zone_id
       DNS_ZONE    = var.dns_zone
       SUBNETS     = join(",", var.subnets)
-      CORS_DOMAIN = var.cors_domain
+      CORS_DOMAIN = "https://${var.cors_domain}"
     }
   }
 

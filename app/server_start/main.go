@@ -43,9 +43,9 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 		StatusCode: http.StatusOK,
 		Headers: map[string]string{
 			"Content-Type":                 "application/json",
-			"Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-			"Access-Control-Allow-Methods": "'PUT'",
-			"Access-Control-Allow-Origin":  fmt.Sprintf("'%s'", os.Getenv("CORS_DOMAIN")),
+			"Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+			"Access-Control-Allow-Methods": "PUT",
+			"Access-Control-Allow-Origin":  os.Getenv("CORS_DOMAIN"),
 		},
 		Body: string(body),
 	}, nil
