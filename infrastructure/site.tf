@@ -31,10 +31,10 @@ module "template_files" {
   base_dir = "${path.module}/site"
   template_vars = {
     # Pass in any values that you wish to use in your templates.
-    server_list   = module.servers_list.url
-    server_start  = module.server_start.url
-    server_status = module.server_status.url
-    server_stop   = module.server_stop
+    servers_list  = "${aws_api_gateway_stage.stage.invoke_url}/servers"
+    server_start  = "${aws_api_gateway_stage.stage.invoke_url}/server"
+    server_status = "${aws_api_gateway_stage.stage.invoke_url}/server"
+    server_stop   = "${aws_api_gateway_stage.stage.invoke_url}/server"
     domain_name   = aws_route53_zone.domain.name
   }
 }

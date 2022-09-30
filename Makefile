@@ -1,5 +1,5 @@
 LAMBDA_HANDLERS = server_start server_stop server_status servers_list
-
+JS_FILE = infrastructure/site/js/app*js
 $(LAMBDA_HANDLERS):
 	docker build --platform linux/amd64 --build-arg app=$@ -t $(ECR)/$@ .
 	docker push $(ECR)/$@
@@ -17,3 +17,4 @@ infrastructure/site:
 	npm install && \
 	npm run build && \
 	mv dist ../infrastructure/site
+	for file in infrastructure/site/js/app*js; do mv -v "$${file}" "$${file}.tmpl"; done

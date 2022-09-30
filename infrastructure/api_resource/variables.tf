@@ -1,4 +1,3 @@
-#variable "bucket" {}
 variable "account_id" {}
 variable "region" {}
 variable "resource_id" {}

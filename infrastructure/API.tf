@@ -24,6 +24,20 @@ resource "aws_api_gateway_resource" "server" {
   rest_api_id = aws_api_gateway_rest_api.minecraft.id
 }
 
+module "servers_cors" {
+  source = "./api_cors_options"
+  resource_id  = aws_api_gateway_resource.servers.id
+  rest_api_id  = aws_api_gateway_rest_api.minecraft.id
+  cors_domain = aws_s3_bucket.site_bucket.bucket_domain_name
+}
+
+module "server_cors" {
+  source = "./api_cors_options"
+  resource_id  = aws_api_gateway_resource.server.id
+  rest_api_id  = aws_api_gateway_rest_api.minecraft.id
+  cors_domain = aws_s3_bucket.site_bucket.bucket_domain_name
+}
+
 module "server_start" {
   source       = "./api_resource"
   region       = data.aws_region.default.name

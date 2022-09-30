@@ -30,7 +30,11 @@
     }),
     methods: {
       start_server() {
-        fetch("${server_stop}")
+        fetch("${server_stop}/", {
+          headers: {
+            "Accept": "application/json",
+          }
+        })
             .then((response) => {
               if (!response.ok) {
                 return response.text()
@@ -41,7 +45,11 @@
             })
       },
       stop_server() {
-        fetch("${server_start}")
+        fetch("${server_start}/", {
+          headers: {
+            "Accept": "application/json",
+          }
+        })
             .then((response) => {
               if (!response.ok) {
                 return response.text()
