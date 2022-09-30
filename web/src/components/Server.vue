@@ -32,7 +32,7 @@
       start_server() {
         fetch("${server_stop}/", {
           headers: {
-            "Accept": "application/json",
+            "Content-Type": "application/json",
           }
         })
             .then((response) => {
@@ -47,7 +47,7 @@
       stop_server() {
         fetch("${server_start}/", {
           headers: {
-            "Accept": "application/json",
+            "Content-Type": "application/json",
           }
         })
             .then((response) => {
