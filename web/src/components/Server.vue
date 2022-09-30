@@ -30,7 +30,7 @@
     }),
     methods: {
       start_server() {
-        fetch("${server_stop}/", { method: "PUT" })
+        fetch("${server_stop}/?name="+this.server, { method: "PUT" })
             .then((response) => {
               if (!response.ok) {
                 return response.text()
@@ -41,7 +41,7 @@
             })
       },
       stop_server() {
-        fetch("${server_start}/", { method: "DELETE" })
+        fetch("${server_start}/?name="+this.server, { method: "DELETE" })
             .then((response) => {
               if (!response.ok) {
                 return response.text()
