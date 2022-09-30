@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"minecraft-catalog/business/catalog"
 	"net/http"
+	"os"
 )
 
 func wrapError(status int, err error) (events.APIGatewayProxyResponse, error) {
@@ -40,8 +41,13 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Headers:    map[string]string{"Content-Type": "application/json"},
-		Body:       string(body),
+		Headers: map[string]string{
+			"Content-Type":                 "application/json",
+			"Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+			"Access-Control-Allow-Methods": "'PUT'",
+			"Access-Control-Allow-Origin":  fmt.Sprintf("'%s'", os.Getenv("CORS_DOMAIN")),
+		},
+		Body: string(body),
 	}, nil
 }
 

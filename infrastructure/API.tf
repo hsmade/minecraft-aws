@@ -25,16 +25,16 @@ resource "aws_api_gateway_resource" "server" {
 }
 
 module "servers_cors" {
-  source = "./api_cors_options"
-  resource_id  = aws_api_gateway_resource.servers.id
-  rest_api_id  = aws_api_gateway_rest_api.minecraft.id
+  source      = "./api_cors_options"
+  resource_id = aws_api_gateway_resource.servers.id
+  rest_api_id = aws_api_gateway_rest_api.minecraft.id
   cors_domain = aws_s3_bucket.site_bucket.bucket_domain_name
 }
 
 module "server_cors" {
-  source = "./api_cors_options"
-  resource_id  = aws_api_gateway_resource.server.id
-  rest_api_id  = aws_api_gateway_rest_api.minecraft.id
+  source      = "./api_cors_options"
+  resource_id = aws_api_gateway_resource.server.id
+  rest_api_id = aws_api_gateway_rest_api.minecraft.id
   cors_domain = aws_s3_bucket.site_bucket.bucket_domain_name
 }
 
@@ -48,6 +48,7 @@ module "server_start" {
   dns_zone_id  = aws_route53_zone.domain.id
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
+  cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
   name         = "server_start"
   path         = "server"
   method       = "PUT"
@@ -72,6 +73,7 @@ module "server_stop" {
   dns_zone_id  = aws_route53_zone.domain.id
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
+  cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
   name         = "server_stop"
   path         = "server"
   method       = "DELETE"
@@ -94,6 +96,7 @@ module "server_status" {
   dns_zone_id  = aws_route53_zone.domain.id
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
+  cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
   name         = "server_status"
   path         = "server"
   method       = "GET"
@@ -119,6 +122,7 @@ module "servers_list" {
   dns_zone_id  = aws_route53_zone.domain.id
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
+  cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
   name         = "servers_list"
   path         = "servers"
   method       = "GET"

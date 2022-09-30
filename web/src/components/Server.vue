@@ -30,11 +30,7 @@
     }),
     methods: {
       start_server() {
-        fetch("${server_stop}/", {
-          headers: {
-            "Content-Type": "application/json",
-          }
-        })
+        fetch("${server_stop}/")
             .then((response) => {
               if (!response.ok) {
                 return response.text()
@@ -45,11 +41,7 @@
             })
       },
       stop_server() {
-        fetch("${server_start}/", {
-          headers: {
-            "Content-Type": "application/json",
-          }
-        })
+        fetch("${server_start}/")
             .then((response) => {
               if (!response.ok) {
                 return response.text()

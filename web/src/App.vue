@@ -28,11 +28,7 @@ export default {
   }),
   methods: {
     updateData() {
-      fetch("${servers_list}/", {
-        headers: {
-          "Content-Type": "application/json",
-        }
-      })
+      fetch("${servers_list}/")
           .then((response) => {
             if (!response.ok) {
               this.error = "failed to fetch data"

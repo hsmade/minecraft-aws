@@ -14,3 +14,4 @@ variable "subnets" {
 variable "iam_actions" {
   type = list(string)
 }
+variable "cors_domain" {}
