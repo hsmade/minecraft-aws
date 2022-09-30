@@ -1,5 +1,6 @@
 resource "aws_cloudwatch_log_group" "ecs-cluster" {
   name = "minecraft"
+  retention_in_days = 14
 }
 
 resource "aws_ecs_cluster" "minecraft" {
@@ -66,10 +67,6 @@ resource "aws_ecs_cluster_capacity_providers" "fargate" {
     base              = 1
     weight            = 100
   }
-}
-
-resource "aws_ecr_repository" "scripts" {
-  name = "scripts"
 }
 
 data "aws_iam_policy_document" "ecs_assume_role" {

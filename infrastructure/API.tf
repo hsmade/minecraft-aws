@@ -83,6 +83,9 @@ module "server_stop" {
     "ecs:DescribeTasks",
     "route53:ListResourceRecordSets",
     "route53:ChangeResourceRecordSets",
+    "ec2:DescribeNetworkInterfaces",
+    "route53:ListResourceRecordSets",
+    "route53:ChangeResourceRecordSets",
   ]
 }
 
