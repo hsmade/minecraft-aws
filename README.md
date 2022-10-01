@@ -41,6 +41,7 @@ When all users leave, the server will shut down after the defined period.
   - fix soa record
   - have a sidecar upload the thumbnail for a server?
   - incorporate the desired status in the status
+  - pass list of ops
 - web:
   - create immediate feedback when stopping/starting servers
   - stop task / stop server

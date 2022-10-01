@@ -2,7 +2,7 @@
   <v-container>
     <v-card
         elevation="2"
-        :loading="0 < statusValue() < 100"
+        :loading="statusValue() > 0 && statusValue() < 100"
     >
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
@@ -12,6 +12,7 @@
         >
           {{ server.name }}.${domain_name}
           <v-spacer></v-spacer>
+          Status:
           <v-progress-circular
               v-if="statusValue() > 0 && statusValue() < 100"
               :value="statusValue()"
