@@ -4,7 +4,7 @@
       <v-container>
         <v-row>
           <v-col v-for="server in servers" v-bind:key="server.name">
-            <ServerComponent :server="server" @update="updateData"/>
+            <ServerComponent :server="server" @update="() => updateData()"/>
           </v-col>
         </v-row>
       </v-container>
@@ -28,6 +28,7 @@ export default {
   }),
   methods: {
     updateData() {
+      console.log("updating data")
       fetch("${servers_list}/")
           .then((response) => {
             if (!response.ok) {
