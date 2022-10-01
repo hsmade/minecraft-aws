@@ -49,6 +49,7 @@ module "server_start" {
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
+  ecs_sg_id    = aws_security_group.ecs.id
   name         = "server_start"
   path         = "server"
   method       = "PUT"
@@ -77,6 +78,7 @@ module "server_stop" {
   name         = "server_stop"
   path         = "server"
   method       = "DELETE"
+  ecs_sg_id    = aws_security_group.ecs.id
   iam_actions = [
     "ecs:StopTask",
     "ecs:ListTasks",
@@ -100,6 +102,7 @@ module "server_status" {
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
+  ecs_sg_id    = aws_security_group.ecs.id
   name         = "server_status"
   path         = "server"
   method       = "GET"
@@ -126,6 +129,7 @@ module "servers_list" {
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
+  ecs_sg_id    = aws_security_group.ecs.id
   name         = "servers_list"
   path         = "servers"
   method       = "GET"

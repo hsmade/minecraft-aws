@@ -166,7 +166,7 @@ resource "aws_security_group" "ecs" {
     to_port   = 25565
     protocol  = "TCP"
     cidr_blocks = [
-      var.home_ip
+      "${var.home_ip}/32"
     ]
   }
 
@@ -189,5 +189,5 @@ resource "aws_security_group_rule" "nfs" {
   security_group_id = aws_security_group.efs.id
   source_security_group_id = aws_security_group.ecs.id
   to_port           = 2049
-  type              = "NFS"
+  type              = "ingress"
 }
