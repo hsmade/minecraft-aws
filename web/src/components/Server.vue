@@ -11,8 +11,9 @@
             v-on="on"
         >
           {{ server.name }}.${domain_name}
+          <v-spacer></v-spacer>
           <v-progress-circular
-              v-if="statusValue() < 100"
+              v-if="0 < statusValue() < 100"
               :value="statusValue()"
               :color="statusValue()===100?'green': statusValue()===0?'red':'orange'"
           />
@@ -20,7 +21,6 @@
           <v-icon v-if="statusValue() === 0" color="red">mdi-close-circle-outline</v-icon>
         </v-card-title>
         </template>
-        <span>{{ server }}</span>
       </v-tooltip>
       <v-card-text>
         <v-btn v-if="server.last_status === 'NONE'" @click="start_server()">Start</v-btn>
