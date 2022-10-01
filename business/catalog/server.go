@@ -250,7 +250,7 @@ func (S Server) Start() error {
 			AwsvpcConfiguration: &ecsTypes.AwsVpcConfiguration{
 				AssignPublicIp: "ENABLED",
 				Subnets:        strings.Split(os.Getenv("SUBNETS"), ","),
-				SecurityGroups: nil,
+				SecurityGroups: []string{os.Getenv("ECS_SG_ID")},
 			},
 		},
 	})

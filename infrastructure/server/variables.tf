@@ -23,3 +23,4 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+variable "efs_sg_id" {}

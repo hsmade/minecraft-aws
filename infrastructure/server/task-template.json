@@ -104,6 +104,14 @@
         "value": "${minecraft_type}"
       },
       {
+        "name": "ENABLE_AUTOSTOP",
+        "value": "TRUE"
+      },
+      {
+        "name": "AUTOSTOP_TIMEOUT_EST",
+        "value": "1800"
+      },
+      {
         "name": "WHITELIST",
         "value": "${whitelist}"
       },

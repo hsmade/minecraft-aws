@@ -155,3 +155,39 @@ data "aws_subnets" "subnets" {
     values = [data.aws_vpc.main.id]
   }
 }
+
+data "aws_vpc" "vpc" {}
+
+resource "aws_security_group" "ecs" {
+  name = "minecraft"
+
+  ingress {
+    from_port = 25565
+    to_port   = 25565
+    protocol  = "TCP"
+    cidr_blocks = [
+      var.home_ip
+    ]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = -1
+    protocol  = "ALL"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "efs" {
+  name = "minecraft-efs"
+}
+
+# allow ecs to connect to efs
+resource "aws_security_group_rule" "nfs" {
+  from_port         = 2049
+  protocol          = "TCP"
+  security_group_id = aws_security_group.efs.id
+  source_security_group_id = aws_security_group.ecs.id
+  to_port           = 2049
+  type              = "NFS"
+}

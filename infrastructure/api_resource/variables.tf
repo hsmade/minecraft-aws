@@ -15,3 +15,4 @@ variable "iam_actions" {
   type = list(string)
 }
 variable "cors_domain" {}
+variable "ecs_sg_id" {}

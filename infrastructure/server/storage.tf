@@ -8,11 +8,11 @@ resource "aws_efs_file_system" "data" {
     transition_to_ia = "AFTER_7_DAYS"
     #    transition_to_primary_storage_class = "NONE"
   }
-
 }
 
 resource "aws_efs_mount_target" "data" {
   for_each       = toset(var.subnets)
   file_system_id = aws_efs_file_system.data.id
   subnet_id      = each.value
+  security_groups = [var.efs_sg_id]
 }
