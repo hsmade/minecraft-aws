@@ -22,14 +22,16 @@
           <v-icon v-if="statusValue() === 0" color="red">mdi-close-circle-outline</v-icon>
         </v-card-title>
         </template>
-        <span>{{ server }}</span>
+        <span>{{ server }} value:{{statusValue()}}</span>
       </v-tooltip>
       <v-card-text>
         <v-btn
+            v-if="server.last_status === 'NONE'"
             @click="start_server()"
             color="primary"
         >Start</v-btn>
         <v-btn
+            v-if="server.last_status !== 'NONE'"
             @click="stop_server()"
             color="primary"
             :loading="server.desired_state === 'STOPPED'"
