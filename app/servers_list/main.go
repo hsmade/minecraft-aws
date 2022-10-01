@@ -19,8 +19,9 @@ func wrapError(status int, err error) (events.APIGatewayProxyResponse, error) {
 
 type Response struct {
 	Name          string            `json:"name"`
-	Status        string            `json:"status"`
+	LastStatus    string            `json:"last_status"`
 	DesiredStatus string            `json:"desired_status"`
+	HealthStatus  string            `json:"health_status"`
 	Tags          map[string]string `json:"tags"`
 }
 
@@ -40,15 +41,17 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 		response := Response{
 			Name:          server.Name,
 			Tags:          server.Tags,
-			Status:        "NONE",
+			LastStatus:    "NONE",
 			DesiredStatus: "NONE",
+			HealthStatus:  "NONE",
 		}
 
 		fmt.Printf("checking status for server '%s'\n", server.Name)
 		status, err := server.Status()
 		if err == nil {
-			response.Status = status.Status
+			response.LastStatus = status.LastStatus
 			response.DesiredStatus = status.DesiredStatus
+			response.HealthStatus = status.HealthStatus
 		}
 		responses = append(responses, response)
 	}

@@ -4,11 +4,27 @@
         elevation="2"
         :loading="server.status==='UNKNOWN'"
     >
-      <v-card-title>{{ server.name }}.${domain_name}</v-card-title>
-      <v-card-subtitle>Status: {{ mapStatus(server.status) }}</v-card-subtitle>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+        <v-card-title
+            v-bind="attrs"
+            v-on="on"
+        >
+          {{ server.name }}.${domain_name}
+          <v-progress-circular
+              v-if="statusValue() < 100"
+              :value="statusValue()"
+              :color="statusValue()===100?'green': statusValue()===0?'red':'orange'"
+          />
+          <v-icon v-if="statusValue() === 100" color="green">mdi-checkbox-marked-circle-outline</v-icon>
+          <v-icon v-if="statusValue() === 0" color="red">mdi-close-circle-outline</v-icon>
+        </v-card-title>
+        </template>
+        <span>{{ server }}</span>
+      </v-tooltip>
       <v-card-text>
-        <v-btn v-if="server.status === 'NONE'" @click="start_server()">Start</v-btn>
-        <v-btn v-if="server.status !== 'NONE'" @click="stop_server()">Stop</v-btn>
+        <v-btn v-if="server.last_status === 'NONE'" @click="start_server()">Start</v-btn>
+        <v-btn v-if="server.last_status !== 'NONE'" @click="stop_server()">Stop</v-btn>
         <v-alert>{{ error }}</v-alert>
         <span>{{ server }}</span>
         <v-list>
@@ -52,13 +68,15 @@
               this.error = text
             })
       },
-      mapStatus(status) {
-        switch(status) {
-          case "NONE": return "Off"
-          case "UNKNOWN": return "Starting"
-          case "HEALTHY": return "On"
-          default: return "Unknown"
-        }
+      statusValue() {
+        if (this.server.last_status === "NONE") return 0
+        if (this.server.last_status === "STOPPED") return 0
+        if (this.server.last_status === "PROVISIONING") return 25
+        if (this.server.last_status === "RUNNING") return 100
+        if (this.server.desired_status === "STOPPED") return 50
+        // last_status is pending
+        if (this.server.healt_status === "UNKNOWN") return 50
+        if (this.server.healt_status === "HEALTHY") return 75
       }
     },
   }

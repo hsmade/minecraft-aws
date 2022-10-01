@@ -29,8 +29,9 @@ type Server struct {
 
 type ServerStatus struct {
 	Name          string
-	Status        string
+	HealthStatus  string
 	DesiredStatus string
+	LastStatus    string
 	taskID        string
 }
 
@@ -73,17 +74,17 @@ func (S Server) Status() (*ServerStatus, error) {
 	}
 
 	status := "NONE"
-	desiredStatus := *task.DesiredStatus
 	for _, container := range task.Containers {
 		if *container.Name != "main" {
 			continue
 		}
-		status = string(container.HealthStatus)
+		status = string(container.HealthStatus) //Unknown, Healthy
 	}
 	return &ServerStatus{
 		Name:          S.Name,
-		Status:        status,
-		DesiredStatus: desiredStatus,
+		HealthStatus:  status,              // UNKNOWN, HEALTHY
+		DesiredStatus: *task.DesiredStatus, // STOPPED, RUNNING
+		LastStatus:    *task.LastStatus,    // STOPPED, PENDING, PROVISIONING, RUNNING
 		taskID:        *task.TaskArn,
 	}, nil
 }
