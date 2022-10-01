@@ -29,12 +29,13 @@
             v-if="server.last_status === 'NONE'"
             @click="start_server()"
             color="primary"
+            :loading="server.clicked"
         >Start</v-btn>
         <v-btn
             v-if="server.last_status !== 'NONE'"
             @click="stop_server()"
             color="primary"
-            :loading="server.desired_state === 'STOPPED'"
+            :loading="server.clicked"
         >Stop</v-btn>
         <v-alert>{{ error }}</v-alert>
         <v-list>
@@ -66,7 +67,7 @@
             .then((text) => {
               this.error = text
             })
-        setTimeout(() => this.$emit('update', ''), 200)
+        this.$emit('clicked', '')
       },
       stop_server() {
         fetch("${server_start}/?name="+this.server.name, { method: "DELETE" })
@@ -78,7 +79,7 @@
             .then((text) => {
               this.error = text
             })
-        setTimeout(() => this.$emit('update', ''), 200)
+        this.$emit('clicked', '')
       },
       statusValue() {
         if (this.server.last_status === "NONE") return 0
