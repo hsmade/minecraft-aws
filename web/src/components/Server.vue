@@ -76,8 +76,8 @@
         if (this.server.last_status === "RUNNING") return 100
         if (this.server.desired_status === "STOPPED") return 50
         // last_status is pending
-        if (this.server.healt_status === "UNKNOWN") return 50
-        if (this.server.healt_status === "HEALTHY") return 75
+        if (this.server.health_status === "UNKNOWN") return 50
+        if (this.server.health_status === "HEALTHY") return 75
         return 0
       }
     },
