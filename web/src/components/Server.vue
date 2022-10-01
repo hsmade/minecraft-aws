@@ -66,7 +66,7 @@
             .then((text) => {
               this.error = text
             })
-        setTimeout(this.$emit('update', ''), 200).bind(this)
+        setTimeout(() => this.$emit('update', ''), 200)
       },
       stop_server() {
         fetch("${server_start}/?name="+this.server.name, { method: "DELETE" })
@@ -78,7 +78,7 @@
             .then((text) => {
               this.error = text
             })
-        setTimeout(this.$emit('update', ''), 200).bind(this)
+        setTimeout(() => this.$emit('update', ''), 200)
       },
       statusValue() {
         if (this.server.last_status === "NONE") return 0
