@@ -3,8 +3,8 @@
     <v-main>
       <v-container>
         <v-row>
-          <v-col v-for="server in servers" v-bind:key="server.name">
-            <ServerComponent :server="server" @clicked="() => server.clicked = true"/>
+          <v-col v-for="(server, index) in servers" v-bind:key="index">
+            <ServerComponent :server="server" @clicked="() => servers[index].clicked = true"/>
           </v-col>
         </v-row>
       </v-container>
