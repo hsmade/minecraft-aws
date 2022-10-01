@@ -25,8 +25,17 @@
         <span>{{ server }}</span>
       </v-tooltip>
       <v-card-text>
-        <v-btn v-if="server.last_status === 'NONE'" @click="start_server()">Start</v-btn>
-        <v-btn v-if="server.last_status !== 'NONE'" @click="stop_server()">Stop</v-btn>
+        <v-btn
+            v-if="server.last_status === 'NONE'"
+            @click="start_server()"
+            color="primary"
+        >Start</v-btn>
+        <v-btn
+            v-if="server.last_status !== 'NONE'"
+            @click="stop_server()"
+            color="primary"
+            :loading="server.desired_state === 'STOPPED'"
+        >Stop</v-btn>
         <v-alert>{{ error }}</v-alert>
         <v-list>
           <v-list-item v-for="(value,key) in server.tags" v-bind:key="key">
@@ -48,6 +57,7 @@
     }),
     methods: {
       start_server() {
+        this.server.last_status="START"
         fetch("${server_stop}/?name="+this.server.name, { method: "PUT" })
             .then((response) => {
               if (!response.ok) {
@@ -59,6 +69,7 @@
             })
       },
       stop_server() {
+        this.server.desired_state = "STOPPED"
         fetch("${server_start}/?name="+this.server.name, { method: "DELETE" })
             .then((response) => {
               if (!response.ok) {
@@ -72,6 +83,7 @@
       statusValue() {
         if (this.server.last_status === "NONE") return 0
         if (this.server.last_status === "STOPPED") return 0
+        if (this.server.last_status === "START") return 1 // when start is clicked
         if (this.server.last_status === "PROVISIONING") return 25
         if (this.server.last_status === "RUNNING") return 100
         if (this.server.desired_status === "STOPPED") return 50
