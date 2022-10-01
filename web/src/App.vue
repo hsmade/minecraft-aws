@@ -4,7 +4,7 @@
       <v-container>
         <v-row>
           <v-col v-for="server in servers" v-bind:key="server.name">
-            <ServerComponent :server="server"/>
+            <ServerComponent :server="server" @update="updateData"/>
           </v-col>
         </v-row>
       </v-container>

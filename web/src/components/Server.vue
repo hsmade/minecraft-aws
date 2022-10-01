@@ -26,12 +26,10 @@
       </v-tooltip>
       <v-card-text>
         <v-btn
-            v-if="server.last_status === 'NONE'"
             @click="start_server()"
             color="primary"
         >Start</v-btn>
         <v-btn
-            v-if="server.last_status !== 'NONE'"
             @click="stop_server()"
             color="primary"
             :loading="server.desired_state === 'STOPPED'"
@@ -57,7 +55,6 @@
     }),
     methods: {
       start_server() {
-        this.server.last_status="START"
         fetch("${server_stop}/?name="+this.server.name, { method: "PUT" })
             .then((response) => {
               if (!response.ok) {
@@ -67,9 +64,9 @@
             .then((text) => {
               this.error = text
             })
+        setTimeout(this.$emit('update', ''), 200).bind(this)
       },
       stop_server() {
-        this.server.desired_state = "STOPPED"
         fetch("${server_start}/?name="+this.server.name, { method: "DELETE" })
             .then((response) => {
               if (!response.ok) {
@@ -79,6 +76,7 @@
             .then((text) => {
               this.error = text
             })
+        setTimeout(this.$emit('update', ''), 200).bind(this)
       },
       statusValue() {
         if (this.server.last_status === "NONE") return 0
