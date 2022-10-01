@@ -28,9 +28,10 @@ type Server struct {
 }
 
 type ServerStatus struct {
-	Name   string
-	Status string
-	taskID string
+	Name          string
+	Status        string
+	DesiredStatus string
+	taskID        string
 }
 
 func (S Server) getRunningTask() (*ecsTypes.Task, error) {
@@ -72,6 +73,7 @@ func (S Server) Status() (*ServerStatus, error) {
 	}
 
 	status := "NONE"
+	desiredStatus := *task.DesiredStatus
 	for _, container := range task.Containers {
 		if *container.Name != "main" {
 			continue
@@ -79,9 +81,10 @@ func (S Server) Status() (*ServerStatus, error) {
 		status = string(container.HealthStatus)
 	}
 	return &ServerStatus{
-		Name:   S.Name,
-		Status: status,
-		taskID: *task.TaskArn,
+		Name:          S.Name,
+		Status:        status,
+		DesiredStatus: desiredStatus,
+		taskID:        *task.TaskArn,
 	}, nil
 }
 

@@ -10,6 +10,7 @@
         <v-btn v-if="server.status === 'NONE'" @click="start_server()">Start</v-btn>
         <v-btn v-if="server.status !== 'NONE'" @click="stop_server()">Stop</v-btn>
         <v-alert>{{ error }}</v-alert>
+        <span>{{ server }}</span>
         <v-list>
           <v-list-item v-for="(value,key) in server.tags" v-bind:key="key">
             <v-list-item-title>{{ key }}</v-list-item-title>

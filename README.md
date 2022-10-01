@@ -35,13 +35,14 @@ When all users leave, the server will shut down after the defined period.
 - infra:
   - rclone config for backup
   - come up with a way to load servers from file/secret, in TF
-  - add SG for ECS for EFS (now uses some default?)
   - limit iam:PassRole
   - delete task: `deleting DNS record: getting IP: timeout waiting for server to get IP`
   - add optional firewall for public IP
   - fix soa record
   - have a sidecar upload the thumbnail for a server?
+  - incorporate the desired status in the status
 - web:
+  - create immediate feedback when stopping/starting servers
   - stop task / stop server
     - run final backup
     - delete route53 record
