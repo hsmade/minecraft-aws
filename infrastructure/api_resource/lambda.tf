@@ -1,12 +1,3 @@
-resource "aws_ecr_repository" "repository" {
-  name = var.name
-}
-
-data "aws_ecr_image" "image" {
-  repository_name = var.name
-  image_tag       = "latest"
-}
-
 data "aws_iam_policy_document" "lambda" {
   statement {
     actions = ["sts:AssumeRole"]
