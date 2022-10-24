@@ -35,7 +35,7 @@
       },
       {
         "name" : "INITIAL_DELAY",
-        "value": "5m"
+        "value": "10s"
       },
       {
         "name" : "BACKUP_INTERVAL",
@@ -60,6 +60,30 @@
       {
         "name" : "RCLONE_REMOTE",
         "value": "s3"
+      },
+      {
+        "name" : "RCLONE_CONFIG_S3_TYPE",
+        "value": "s3"
+      },
+      {
+        "name" : "RCLONE_CONFIG_S3_PROVIDER",
+        "value": "AWS"
+      },
+      {
+        "name" : "RCLONE_S3_ENV_AUTH",
+        "value": "true"
+      },
+      {
+        "name" : "RCLONE_DEST_DIR",
+        "value": "${bucket_name}"
+      },
+      {
+        "name" : "RCLONE_S3_REGION",
+        "value": "${bucket_region}"
+      },
+      {
+        "name" : "RCLONE_S3_NO_CHECK_BUCKET",
+        "value": "true"
       }
     ],
     "dependsOn": [

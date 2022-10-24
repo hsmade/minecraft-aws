@@ -40,7 +40,6 @@ When all users leave, the server will shut down after the defined period.
   - add optional firewall for public IP
   - fix soa record
   - have a sidecar upload the thumbnail for a server?
-  - incorporate the desired status in the status
   - pass list of ops
 - web:
   - create immediate feedback when stopping/starting servers
@@ -48,5 +47,6 @@ When all users leave, the server will shut down after the defined period.
     - run final backup
     - delete route53 record
   - rcon
+  - logs?
 - pipeline:
   - lamdba depends on image, image depends on ecr -> deadlock

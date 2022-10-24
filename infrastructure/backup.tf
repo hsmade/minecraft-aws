@@ -28,19 +28,11 @@ data "aws_iam_policy_document" "ecs_backup_restore" {
       "s3:DeleteObject",
       "s3:DeleteObjectVersion",
       "s3:PutObjectACL",
-    ]
-    resources = [
-      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:/*",
-      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:",
-    ]
-  }
-  statement {
-    effect = "Allow"
-    actions = [
       "s3:ListBucket",
     ]
     resources = [
-      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}:",
+      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}/*",
+      "arn:aws:s3:::${aws_s3_bucket.backup_bucket.bucket}",
     ]
   }
 }
