@@ -4,6 +4,8 @@ github.com/aws/aws-sdk-go v1.44.105 h1:UUwoD1PRKIj3ltrDUYTDQj5fOTK3XsnqolLpRTMmS
 github.com/aws/aws-sdk-go v1.44.105/go.mod h1:y4AeaBuwd2Lk+GepC1E9v0qOiTws0MIWAX4oIKwKHZo=
 github.com/aws/aws-sdk-go v1.44.106 h1:FzINxRGt0gAzz01ixtKfkjiDOnnpd/uNbstW/qPW2QE=
 github.com/aws/aws-sdk-go v1.44.106/go.mod h1:y4AeaBuwd2Lk+GepC1E9v0qOiTws0MIWAX4oIKwKHZo=
+github.com/aws/aws-sdk-go v1.44.121 h1:ahBRUqUp4qLyGmSM5KKn+TVpZkRmtuLxTWw+6Hq/ebs=
+github.com/aws/aws-sdk-go v1.44.121/go.mod h1:y4AeaBuwd2Lk+GepC1E9v0qOiTws0MIWAX4oIKwKHZo=
 github.com/aws/aws-sdk-go-v2 v1.16.16 h1:M1fj4FE2lB4NzRb9Y0xdWsn2P0+2UHVxwKyOa4YJNjk=
 github.com/aws/aws-sdk-go-v2 v1.16.16/go.mod h1:SwiyXi/1zTUZ6KIAmLK5V5ll8SiURNUYOqTerZPaF9k=
 github.com/aws/aws-sdk-go-v2 v1.17.0 h1:kWm8OZGx0Zvd6PsOfjFtwbw7+uWYp65DK8suo7WVznw=
