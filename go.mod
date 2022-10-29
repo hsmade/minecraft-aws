@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.126
 	github.com/aws/aws-sdk-go-v2/config v1.17.9
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.64.0
-	github.com/aws/aws-sdk-go-v2/service/ecs v1.18.22
+	github.com/aws/aws-sdk-go-v2/service/ecs v1.18.26
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.22.2
 	github.com/pkg/errors v0.9.1
 )

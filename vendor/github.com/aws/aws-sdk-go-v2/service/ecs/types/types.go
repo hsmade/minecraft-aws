@@ -2420,13 +2420,20 @@ type ManagedScaling struct {
 	// omitted, the default value of 300 seconds is used.
 	InstanceWarmupPeriod *int32
 
-	// The maximum number of container instances that Amazon ECS scales in or scales
-	// out at one time. If this parameter is omitted, the default value of 10000 is
-	// used.
+	// The maximum number of Amazon EC2 instances that Amazon ECS will scale out at one
+	// time. The scale in process is not affected by this parameter. If this parameter
+	// is omitted, the default value of 10000 is used.
 	MaximumScalingStepSize *int32
 
-	// The minimum number of container instances that Amazon ECS scales in or scales
-	// out at one time. If this parameter is omitted, the default value of 1 is used.
+	// The minimum number of Amazon EC2 instances that Amazon ECS will scale out at one
+	// time. The scale in process is not affected by this parameter If this parameter
+	// is omitted, the default value of 1 is used. When additional capacity is
+	// required, Amazon ECS will scale up the minimum scaling step size even if the
+	// actual demand is less than the minimum scaling step size. If you use a capacity
+	// provider with an Auto Scaling group configured with more than one Amazon EC2
+	// instance type or Availability Zone, Amazon ECS will scale up by the exact
+	// minimum scaling step size value and will ignore both the maximum scaling step
+	// size as well as the capacity demand.
 	MinimumScalingStepSize *int32
 
 	// Determines whether to use managed scaling for the capacity provider.
@@ -2608,16 +2615,14 @@ type PortMapping struct {
 	// the default ephemeral port range from 49153 through 65535 is used. Do not
 	// attempt to specify a host port in the ephemeral port range as these are reserved
 	// for automatic assignment. In general, ports below 32768 are outside of the
-	// ephemeral port range. The default ephemeral port range from 49153 through 65535
-	// is always used for Docker versions before 1.6.0. The default reserved ports are
-	// 22 for SSH, the Docker ports 2375 and 2376, and the Amazon ECS container agent
-	// ports 51678-51680. Any host port that was previously specified in a running task
-	// is also reserved while the task is running. That is, after a task stops, the
-	// host port is released. The current reserved ports are displayed in the
-	// remainingResources of DescribeContainerInstances output. A container instance
-	// can have up to 100 reserved ports at a time. This number includes the default
-	// reserved ports. Automatically assigned ports aren't included in the 100 reserved
-	// ports quota.
+	// ephemeral port range. The default reserved ports are 22 for SSH, the Docker
+	// ports 2375 and 2376, and the Amazon ECS container agent ports 51678-51680. Any
+	// host port that was previously specified in a running task is also reserved while
+	// the task is running. That is, after a task stops, the host port is released. The
+	// current reserved ports are displayed in the remainingResources of
+	// DescribeContainerInstances output. A container instance can have up to 100
+	// reserved ports at a time. This number includes the default reserved ports.
+	// Automatically assigned ports aren't included in the 100 reserved ports quota.
 	HostPort *int32
 
 	// The protocol used for the port mapping. Valid values are tcp and udp. The
@@ -2844,9 +2849,7 @@ type Service struct {
 	// deployment and the ordering of stopping and starting tasks.
 	DeploymentConfiguration *DeploymentConfiguration
 
-	// The deployment controller type the service is using. When using the
-	// DescribeServices API, this field is omitted if the service uses the ECS
-	// deployment controller type.
+	// The deployment controller type the service is using.
 	DeploymentController *DeploymentController
 
 	// The current state of deployments for the service.
