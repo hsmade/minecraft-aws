@@ -36,7 +36,6 @@ When all users leave, the server will shut down after the defined period.
   - rclone config for backup
   - come up with a way to load servers from file/secret, in TF
   - limit iam:PassRole
-  - delete task: `deleting DNS record: getting IP: timeout waiting for server to get IP`
   - add optional firewall for public IP
   - fix soa record
   - have a sidecar upload the thumbnail for a server?

@@ -112,11 +112,6 @@ func (S Server) Stop() error {
 }
 
 func (S Server) deleteDNSRecord() error {
-	ip, err := S.getIP()
-	if err != nil {
-		return errors.Wrap(err, "getting IP")
-	}
-
 	output, err := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    &S.DNSZoneID,
 		MaxItems:        aws.Int32(1),
@@ -130,7 +125,10 @@ func (S Server) deleteDNSRecord() error {
 	if len(output.ResourceRecordSets) == 0 {
 		return nil
 	}
-	return errors.Wrap(S.modifyDNSRecord(ip, route53Types.ChangeActionDelete), "deleting DNS record")
+	if len(output.ResourceRecordSets[0].ResourceRecords) == 0 {
+		return nil
+	}
+	return errors.Wrap(S.modifyDNSRecord(*output.ResourceRecordSets[0].ResourceRecords[0].Value, route53Types.ChangeActionDelete), "deleting DNS record")
 }
 
 func (S Server) modifyDNSRecord(ip string, action route53Types.ChangeAction) error {
