@@ -80,7 +80,7 @@ func (S Server) Status() (*ServerStatus, error) {
 		status = string(container.HealthStatus) //Unknown, Healthy
 	}
 
-	ip, err := S.getIP(0)
+	ip, err := S.getIpForTask(task)
 	if err != nil {
 		ip = "unknown"
 	}
@@ -184,11 +184,46 @@ func (S Server) createOrUpdateDNSRecord() error {
 	return errors.Wrap(S.modifyDNSRecord(ip, route53Types.ChangeActionUpsert), "updating DNS record")
 }
 
+func (S Server) getIpForTask(task *ecsTypes.Task) (string, error) {
+	fmt.Print("looping over attachments\n")
+	for _, attachment := range task.Attachments {
+		for _, detail := range attachment.Details {
+			fmt.Printf("looping over detail: %+v for attachment: %+v\n", detail, attachment)
+			if *detail.Name == "networkInterfaceId" && detail.Value != nil && *detail.Value != "" {
+				output, err := S.Ec2Client.DescribeNetworkInterfaces(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
+					NetworkInterfaceIds: []string{*detail.Value},
+				})
+				if err != nil {
+					fmt.Printf("DescribeNetworkInterfaces got error: %v\n", err)
+					continue
+				}
+
+				if len(output.NetworkInterfaces) == 0 {
+					fmt.Println("no network interfaces yet")
+					continue
+				}
+
+				if output.NetworkInterfaces[0].Association == nil {
+					fmt.Println("association is still nil")
+					continue
+				}
+
+				fmt.Printf("network interfaces: %+v\n", output.NetworkInterfaces)
+				return *output.NetworkInterfaces[0].Association.PublicIp, nil
+			}
+		}
+	}
+	return "", errors.New("no IP found")
+}
+
 func (S Server) getIP(timeout time.Duration) (string, error) {
-	ip := ""
 	start := time.Now()
 
 	for {
+		if time.Now().After(start.Add(timeout)) {
+			return "", errors.New("timeout waiting for server to get IP")
+		}
+
 		task, err := S.getRunningTask()
 		fmt.Printf("loop: task: %+v err: %v\n", task, err)
 
@@ -196,44 +231,11 @@ func (S Server) getIP(timeout time.Duration) (string, error) {
 			continue // no running task yet
 		}
 
-		fmt.Print("looping over attachments\n")
-		for _, attachment := range task.Attachments {
-			for _, detail := range attachment.Details {
-				fmt.Printf("looping over detail: %+v for attachment: %+v\n", detail, attachment)
-				if *detail.Name == "networkInterfaceId" && detail.Value != nil && *detail.Value != "" {
-					for {
-						if time.Now().After(start.Add(timeout)) {
-							return ip, errors.New("timeout waiting for server to get IP")
-						}
-
-						output, err := S.Ec2Client.DescribeNetworkInterfaces(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
-							NetworkInterfaceIds: []string{*detail.Value},
-						})
-						if err != nil {
-							fmt.Printf("DescribeNetworkInterfaces got error: %v\n", err)
-							continue
-						}
-
-						if len(output.NetworkInterfaces) == 0 {
-							fmt.Println("no network interfaces yet")
-							continue
-						}
-
-						if output.NetworkInterfaces[0].Association == nil {
-							fmt.Println("association is still nil")
-							continue
-						}
-
-						fmt.Printf("network interfaces: %+v\n", output.NetworkInterfaces)
-						return *output.NetworkInterfaces[0].Association.PublicIp, nil
-					}
-				}
-			}
-		}
-		if time.Now().After(start.Add(timeout)) {
-			return ip, errors.New("timeout waiting for server to get IP")
-		}
 		time.Sleep(1 * time.Second)
+		ip, err := S.getIpForTask(task)
+		if err == nil {
+			return ip, nil
+		}
 	}
 }
 
