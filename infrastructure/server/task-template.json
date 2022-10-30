@@ -140,6 +140,10 @@
         "value": "${whitelist}"
       },
       {
+        "name": "OPS",
+        "value": "${ops}"
+      },
+      {
         "name": "VERSION",
         "value": "${minecraft_version}"
       },

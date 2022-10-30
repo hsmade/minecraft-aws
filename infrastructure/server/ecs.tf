@@ -32,6 +32,7 @@ resource "aws_ecs_task_definition" "task" {
       minecraft_version = var.minecraft_version
       forge_version     = var.forge_version
       whitelist         = join(",", var.whitelist)
+      ops               = join(",", var.ops)
     }
   )
 }

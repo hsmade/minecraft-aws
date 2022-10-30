@@ -38,7 +38,6 @@ When all users leave, the server will shut down after the defined period.
   - add optional firewall for public IP
   - fix soa record
   - have a sidecar upload the thumbnail for a server?
-  - pass list of ops
 - web:
   - stop task / stop server
     - run final backup
