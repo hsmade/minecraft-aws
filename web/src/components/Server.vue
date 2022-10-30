@@ -4,21 +4,26 @@
         elevation="2"
         :loading="statusValue() > 0 && statusValue() < 100"
     >
-      <v-card-title
-          v-bind="attrs"
-          v-on="on"
-      >
-        {{ server.name }}.${domain_name}
-        <v-spacer></v-spacer>
-        Status:
-        <v-progress-circular
-            v-if="statusValue() > 0 && statusValue() < 100"
-            :value="statusValue()"
-            :color="statusValue()===100?'green':statusValue()===0?'red':'orange'"
-        />
-        <v-icon v-if="statusValue() === 100" color="green">mdi-checkbox-marked-circle-outline</v-icon>
-        <v-icon v-if="statusValue() === 0" color="red">mdi-close-circle-outline</v-icon>
-      </v-card-title>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+        <v-card-title
+            v-bind="attrs"
+            v-on="on"
+        >
+          {{ server.name }}.${domain_name}
+          <v-spacer></v-spacer>
+          Status:
+          <v-progress-circular
+              v-if="statusValue() > 0 && statusValue() < 100"
+              :value="statusValue()"
+              :color="statusValue()===100?'green':statusValue()===0?'red':'orange'"
+          />
+          <v-icon v-if="statusValue() === 100" color="green">mdi-checkbox-marked-circle-outline</v-icon>
+          <v-icon v-if="statusValue() === 0" color="red">mdi-close-circle-outline</v-icon>
+        </v-card-title>
+        </template>
+        <span>{{ server.ip }}</span>
+      </v-tooltip>
       <v-card-text>
         <v-btn
             v-if="server.last_status === 'NONE'"

@@ -41,7 +41,7 @@ When all users leave, the server will shut down after the defined period.
 - web:
   - stop task / stop server
     - run final backup
-  - rcon
+  - better rcon
   - logs?
 - pipeline:
   - lamdba depends on image, image depends on ecr -> deadlock

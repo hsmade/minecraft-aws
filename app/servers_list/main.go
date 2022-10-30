@@ -23,6 +23,7 @@ type Response struct {
 	DesiredStatus string            `json:"desired_status"`
 	HealthStatus  string            `json:"health_status"`
 	Tags          map[string]string `json:"tags"`
+	IP            string            `json:"ip"`
 }
 
 func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -52,6 +53,7 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 			response.LastStatus = status.LastStatus
 			response.DesiredStatus = status.DesiredStatus
 			response.HealthStatus = status.HealthStatus
+			response.IP = status.IP
 		}
 		responses = append(responses, response)
 	}

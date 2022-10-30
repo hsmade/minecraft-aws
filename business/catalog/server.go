@@ -33,6 +33,7 @@ type ServerStatus struct {
 	DesiredStatus string
 	LastStatus    string
 	taskID        string
+	IP            string
 }
 
 func (S Server) getRunningTask() (*ecsTypes.Task, error) {
@@ -80,12 +81,19 @@ func (S Server) Status() (*ServerStatus, error) {
 		}
 		status = string(container.HealthStatus) //Unknown, Healthy
 	}
+
+	ip, err := S.getIP()
+	if err != nil {
+		ip = "unknown"
+	}
+
 	return &ServerStatus{
 		Name:          S.Name,
 		HealthStatus:  status,              // UNKNOWN, HEALTHY
 		DesiredStatus: *task.DesiredStatus, // STOPPED, RUNNING
 		LastStatus:    *task.LastStatus,    // STOPPED, PENDING, PROVISIONING, RUNNING
 		taskID:        *task.TaskArn,
+		IP:            ip,
 	}, nil
 }
 
