@@ -139,5 +139,6 @@ module "servers_list" {
     "ecs:DescribeTaskDefinition",
     "ecs:ListTasks",
     "ecs:DescribeTasks",
+    "ec2:DescribeNetworkInterfaces",
   ]
 }
