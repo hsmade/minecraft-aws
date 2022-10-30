@@ -49,7 +49,7 @@ module "server_start" {
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
-  ecs_sg_id    = aws_security_group.ecs.id
+  ecs_sg_id    = aws_security_group.ecs.id  # used for ECS tasks
   name         = "server_start"
   path         = "server"
   method       = "PUT"

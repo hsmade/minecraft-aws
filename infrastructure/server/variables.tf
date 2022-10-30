@@ -5,6 +5,9 @@ variable "backup_image" {
 variable "main_image" {
   default = "itzg/minecraft-server:latest"
 }
+variable "rcon_image" {
+  default = "itzg/rcon:latest"
+}
 variable "account_id" {}
 variable "region" {}
 variable "bucket_name" {}

@@ -35,7 +35,7 @@ When all users leave, the server will shut down after the defined period.
 - infra:
   - come up with a way to load servers from file/secret, in TF
   - limit iam:PassRole
-  - add optional firewall for public IP
+  - add optional firewall for public IP for minecraft port, per server. Currently limited to `home_ip`
   - fix soa record
   - have a sidecar upload the thumbnail for a server?
 - web:

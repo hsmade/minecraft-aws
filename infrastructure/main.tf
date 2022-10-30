@@ -158,12 +158,24 @@ data "aws_subnets" "subnets" {
 
 data "aws_vpc" "vpc" {}
 
+# FIXME: want this per server, but start() needs it in env
 resource "aws_security_group" "ecs" {
   name = "minecraft"
 
   ingress {
+    description = "minecraft"
     from_port = 25565
     to_port   = 25565
+    protocol  = "TCP"
+    cidr_blocks = [
+      "${var.home_ip}/32"  # FIXME: how to open to others
+    ]
+  }
+
+  ingress {
+    description = "RCON"
+    from_port = 4326
+    to_port   = 4327
     protocol  = "TCP"
     cidr_blocks = [
       "${var.home_ip}/32"

@@ -24,6 +24,7 @@ resource "aws_ecs_task_definition" "task" {
       name              = var.name
       backup_image      = var.backup_image
       main_image        = var.main_image
+      rcon_image        = var.rcon_image
       bucket_name       = var.bucket_name
       bucket_region     = var.region
       sidecars_role_arn = var.sidecars_role_arn

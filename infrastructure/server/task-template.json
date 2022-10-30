@@ -159,5 +159,41 @@
       "startPeriod": 300,
       "timeout": 5
     }
+  },
+  {
+    "name": "rcon-web",
+    "image": "${rcon_image}",
+    "essential": false,
+    "logConfiguration": {
+      "logDriver":"awslogs",
+      "options": {
+        "awslogs-group": "minecraft",
+        "awslogs-region": "${region}",
+        "awslogs-create-group": "true",
+        "awslogs-stream-prefix": "${name}"
+      }
+    },
+    "portMappings": [
+      {
+        "ContainerPort": 4326
+      },
+      {
+        "ContainerPort": 4327
+      }
+    ],
+    "environment": [
+      {
+        "name": "RWA_ENV",
+        "value": "TRUE"
+      },
+      {
+        "name": "RWA_PASSWORD",
+        "value": "minecraft"
+      },
+      {
+        "name": "RWA_RCON_PASSWORD",
+        "value": "minecraft"
+      }
+    ]
   }
 ]
