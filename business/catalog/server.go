@@ -15,8 +15,6 @@ import (
 	"time"
 )
 
-var timeout = 20 * time.Second
-
 type Server struct {
 	Name          string // task definition family name
 	Cluster       string
@@ -82,7 +80,7 @@ func (S Server) Status() (*ServerStatus, error) {
 		status = string(container.HealthStatus) //Unknown, Healthy
 	}
 
-	ip, err := S.getIP()
+	ip, err := S.getIP(0)
 	if err != nil {
 		ip = "unknown"
 	}
@@ -165,7 +163,7 @@ func (S Server) modifyDNSRecord(ip string, action route53Types.ChangeAction) err
 }
 
 func (S Server) createOrUpdateDNSRecord() error {
-	ip, err := S.getIP()
+	ip, err := S.getIP(20 * time.Second)
 	if err != nil {
 		return errors.Wrap(err, "getting IP")
 	}
@@ -186,15 +184,11 @@ func (S Server) createOrUpdateDNSRecord() error {
 	return errors.Wrap(S.modifyDNSRecord(ip, route53Types.ChangeActionUpsert), "updating DNS record")
 }
 
-func (S Server) getIP() (string, error) {
+func (S Server) getIP(timeout time.Duration) (string, error) {
 	ip := ""
 	start := time.Now()
 
 	for {
-		if time.Now().After(start.Add(timeout)) {
-			return ip, errors.New("timeout waiting for server to get IP")
-		}
-
 		task, err := S.getRunningTask()
 		fmt.Printf("loop: task: %+v err: %v\n", task, err)
 
@@ -235,6 +229,9 @@ func (S Server) getIP() (string, error) {
 					}
 				}
 			}
+		}
+		if time.Now().After(start.Add(timeout)) {
+			return ip, errors.New("timeout waiting for server to get IP")
 		}
 		time.Sleep(1 * time.Second)
 	}
