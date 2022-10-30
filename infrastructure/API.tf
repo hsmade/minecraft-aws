@@ -109,6 +109,7 @@ module "server_status" {
   iam_actions = [
     "ecs:ListTasks",
     "ecs:DescribeTasks",
+    "ec2:DescribeNetworkInterfaces",
   ]
 }
 
