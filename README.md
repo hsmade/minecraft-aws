@@ -33,7 +33,6 @@ When all users leave, the server will shut down after the defined period.
 - use iam role instead of user directly https://github.com/aws-actions/configure-aws-credentials#assuming-a-role
 - current docker image will download the server and install it, every time. This takes too long
 - infra:
-  - rclone config for backup
   - come up with a way to load servers from file/secret, in TF
   - limit iam:PassRole
   - add optional firewall for public IP
@@ -41,10 +40,8 @@ When all users leave, the server will shut down after the defined period.
   - have a sidecar upload the thumbnail for a server?
   - pass list of ops
 - web:
-  - create immediate feedback when stopping/starting servers
   - stop task / stop server
     - run final backup
-    - delete route53 record
   - rcon
   - logs?
 - pipeline:

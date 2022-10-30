@@ -54,10 +54,13 @@
     name: 'ServerComponent',
     props: ["server"],
     data: () => ({
-      error: ""
+      error: "",
+      wantedState: "",
+      setState: "",
     }),
     methods: {
       start_server() {
+        this.wantedState = "START"
         fetch("${server_stop}/?name="+this.server.name, { method: "PUT" })
             .then((response) => {
               if (!response.ok) {
@@ -70,6 +73,7 @@
         this.$emit('clicked', '')
       },
       stop_server() {
+        this.wantedState = "STOP"
         fetch("${server_start}/?name="+this.server.name, { method: "DELETE" })
             .then((response) => {
               if (!response.ok) {
@@ -82,9 +86,9 @@
         this.$emit('clicked', '')
       },
       statusValue() {
+        if (this.wantedState !== this.setState) return 10
         if (this.server.last_status === "NONE") return 0
         if (this.server.last_status === "STOPPED") return 0
-        if (this.server.last_status === "START") return 1 // when start is clicked
         if (this.server.last_status === "PROVISIONING") return 25
         if (this.server.last_status === "RUNNING") return 100
         if (this.server.desired_status === "STOPPED") return 50
@@ -94,5 +98,12 @@
         return 0
       }
     },
+    async created() {
+      this.setState = this.wantedState = this.server.last_status === "NONE"?"STOP":"START"
+    },
+    async updated() {
+      this.setState = this.server.last_status === "NONE"?"STOP":"START"
+    },
+
   }
 </script>
