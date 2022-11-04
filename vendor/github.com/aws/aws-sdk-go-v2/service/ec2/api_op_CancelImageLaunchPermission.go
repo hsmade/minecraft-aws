@@ -6,51 +6,38 @@ import (
 	"context"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Move an BYOIP IPv4 CIDR to IPAM from a public IPv4 pool. If you already have an
-// IPv4 BYOIP CIDR with Amazon Web Services, you can move the CIDR to IPAM from a
-// public IPv4 pool. You cannot move an IPv6 CIDR to IPAM. If you are bringing a
-// new IP address to Amazon Web Services for the first time, complete the steps in
-// Tutorial: BYOIP address CIDRs to IPAM
-// (https://docs.aws.amazon.com/vpc/latest/ipam/tutorials-byoip-ipam.html).
-func (c *Client) MoveByoipCidrToIpam(ctx context.Context, params *MoveByoipCidrToIpamInput, optFns ...func(*Options)) (*MoveByoipCidrToIpamOutput, error) {
+// Removes your Amazon Web Services account from the launch permissions for the
+// specified AMI. For more information, see Cancel sharing an AMI with your Amazon
+// Web Services account (https://docs.aws.amazon.com/) in the Amazon Elastic
+// Compute Cloud User Guide.
+func (c *Client) CancelImageLaunchPermission(ctx context.Context, params *CancelImageLaunchPermissionInput, optFns ...func(*Options)) (*CancelImageLaunchPermissionOutput, error) {
 	if params == nil {
-		params = &MoveByoipCidrToIpamInput{}
+		params = &CancelImageLaunchPermissionInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "MoveByoipCidrToIpam", params, optFns, c.addOperationMoveByoipCidrToIpamMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CancelImageLaunchPermission", params, optFns, c.addOperationCancelImageLaunchPermissionMiddlewares)
 	if err != nil {
 		return nil, err
 	}
 
-	out := result.(*MoveByoipCidrToIpamOutput)
+	out := result.(*CancelImageLaunchPermissionOutput)
 	out.ResultMetadata = metadata
 	return out, nil
 }
 
-type MoveByoipCidrToIpamInput struct {
+type CancelImageLaunchPermissionInput struct {
 
-	// The BYOIP CIDR.
+	// The ID of the AMI that was shared with your Amazon Web Services account.
 	//
 	// This member is required.
-	Cidr *string
+	ImageId *string
 
-	// The IPAM pool ID.
-	//
-	// This member is required.
-	IpamPoolId *string
-
-	// The Amazon Web Services account ID of the owner of the IPAM pool.
-	//
-	// This member is required.
-	IpamPoolOwner *string
-
-	// A check for whether you have the required permissions for the action without
-	// actually making the request and provides an error response. If you have the
+	// Checks whether you have the required permissions for the action, without
+	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
 	DryRun *bool
@@ -58,10 +45,10 @@ type MoveByoipCidrToIpamInput struct {
 	noSmithyDocumentSerde
 }
 
-type MoveByoipCidrToIpamOutput struct {
+type CancelImageLaunchPermissionOutput struct {
 
-	// The BYOIP CIDR.
-	ByoipCidr *types.ByoipCidr
+	// Returns true if the request succeeds; otherwise, it returns an error.
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
@@ -69,12 +56,12 @@ type MoveByoipCidrToIpamOutput struct {
 	noSmithyDocumentSerde
 }
 
-func (c *Client) addOperationMoveByoipCidrToIpamMiddlewares(stack *middleware.Stack, options Options) (err error) {
-	err = stack.Serialize.Add(&awsEc2query_serializeOpMoveByoipCidrToIpam{}, middleware.After)
+func (c *Client) addOperationCancelImageLaunchPermissionMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	err = stack.Serialize.Add(&awsEc2query_serializeOpCancelImageLaunchPermission{}, middleware.After)
 	if err != nil {
 		return err
 	}
-	err = stack.Deserialize.Add(&awsEc2query_deserializeOpMoveByoipCidrToIpam{}, middleware.After)
+	err = stack.Deserialize.Add(&awsEc2query_deserializeOpCancelImageLaunchPermission{}, middleware.After)
 	if err != nil {
 		return err
 	}
@@ -114,10 +101,10 @@ func (c *Client) addOperationMoveByoipCidrToIpamMiddlewares(stack *middleware.St
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addOpMoveByoipCidrToIpamValidationMiddleware(stack); err != nil {
+	if err = addOpCancelImageLaunchPermissionValidationMiddleware(stack); err != nil {
 		return err
 	}
-	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opMoveByoipCidrToIpam(options.Region), middleware.Before); err != nil {
+	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opCancelImageLaunchPermission(options.Region), middleware.Before); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -132,11 +119,11 @@ func (c *Client) addOperationMoveByoipCidrToIpamMiddlewares(stack *middleware.St
 	return nil
 }
 
-func newServiceMetadataMiddleware_opMoveByoipCidrToIpam(region string) *awsmiddleware.RegisterServiceMetadata {
+func newServiceMetadataMiddleware_opCancelImageLaunchPermission(region string) *awsmiddleware.RegisterServiceMetadata {
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
 		SigningName:   "ec2",
-		OperationName: "MoveByoipCidrToIpam",
+		OperationName: "CancelImageLaunchPermission",
 	}
 }

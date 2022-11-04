@@ -11,58 +11,51 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Provision a CIDR to a public IPv4 pool. For more information about IPAM, see
-// What is IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
-// in the Amazon VPC IPAM User Guide.
-func (c *Client) ProvisionPublicIpv4PoolCidr(ctx context.Context, params *ProvisionPublicIpv4PoolCidrInput, optFns ...func(*Options)) (*ProvisionPublicIpv4PoolCidrOutput, error) {
+// Accepts an Elastic IP address transfer. For more information, see Accept a
+// transferred Elastic IP address
+// (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-eips.html#using-instance-addressing-eips-transfer-accept)
+// in the Amazon Virtual Private Cloud User Guide.
+func (c *Client) AcceptAddressTransfer(ctx context.Context, params *AcceptAddressTransferInput, optFns ...func(*Options)) (*AcceptAddressTransferOutput, error) {
 	if params == nil {
-		params = &ProvisionPublicIpv4PoolCidrInput{}
+		params = &AcceptAddressTransferInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ProvisionPublicIpv4PoolCidr", params, optFns, c.addOperationProvisionPublicIpv4PoolCidrMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AcceptAddressTransfer", params, optFns, c.addOperationAcceptAddressTransferMiddlewares)
 	if err != nil {
 		return nil, err
 	}
 
-	out := result.(*ProvisionPublicIpv4PoolCidrOutput)
+	out := result.(*AcceptAddressTransferOutput)
 	out.ResultMetadata = metadata
 	return out, nil
 }
 
-type ProvisionPublicIpv4PoolCidrInput struct {
+type AcceptAddressTransferInput struct {
 
-	// The ID of the IPAM pool you would like to use to allocate this CIDR.
+	// The Elastic IP address you are accepting for transfer.
 	//
 	// This member is required.
-	IpamPoolId *string
+	Address *string
 
-	// The netmask length of the CIDR you would like to allocate to the public IPv4
-	// pool.
-	//
-	// This member is required.
-	NetmaskLength *int32
-
-	// The ID of the public IPv4 pool you would like to use for this CIDR.
-	//
-	// This member is required.
-	PoolId *string
-
-	// A check for whether you have the required permissions for the action without
-	// actually making the request and provides an error response. If you have the
+	// Checks whether you have the required permissions for the action, without
+	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
 	DryRun *bool
 
+	// tag: - The key/value combination of a tag assigned to the resource. Use the tag
+	// key in the filter name and the tag value as the filter value. For example, to
+	// find all resources that have a tag with the key Owner and the value TeamA,
+	// specify tag:Owner for the filter name and TeamA for the filter value.
+	TagSpecifications []types.TagSpecification
+
 	noSmithyDocumentSerde
 }
 
-type ProvisionPublicIpv4PoolCidrOutput struct {
+type AcceptAddressTransferOutput struct {
 
-	// Information about the address range of the public IPv4 pool.
-	PoolAddressRange *types.PublicIpv4PoolRange
-
-	// The ID of the pool that you want to provision the CIDR to.
-	PoolId *string
+	// An Elastic IP address transfer.
+	AddressTransfer *types.AddressTransfer
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
@@ -70,12 +63,12 @@ type ProvisionPublicIpv4PoolCidrOutput struct {
 	noSmithyDocumentSerde
 }
 
-func (c *Client) addOperationProvisionPublicIpv4PoolCidrMiddlewares(stack *middleware.Stack, options Options) (err error) {
-	err = stack.Serialize.Add(&awsEc2query_serializeOpProvisionPublicIpv4PoolCidr{}, middleware.After)
+func (c *Client) addOperationAcceptAddressTransferMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	err = stack.Serialize.Add(&awsEc2query_serializeOpAcceptAddressTransfer{}, middleware.After)
 	if err != nil {
 		return err
 	}
-	err = stack.Deserialize.Add(&awsEc2query_deserializeOpProvisionPublicIpv4PoolCidr{}, middleware.After)
+	err = stack.Deserialize.Add(&awsEc2query_deserializeOpAcceptAddressTransfer{}, middleware.After)
 	if err != nil {
 		return err
 	}
@@ -115,10 +108,10 @@ func (c *Client) addOperationProvisionPublicIpv4PoolCidrMiddlewares(stack *middl
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addOpProvisionPublicIpv4PoolCidrValidationMiddleware(stack); err != nil {
+	if err = addOpAcceptAddressTransferValidationMiddleware(stack); err != nil {
 		return err
 	}
-	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opProvisionPublicIpv4PoolCidr(options.Region), middleware.Before); err != nil {
+	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opAcceptAddressTransfer(options.Region), middleware.Before); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -133,11 +126,11 @@ func (c *Client) addOperationProvisionPublicIpv4PoolCidrMiddlewares(stack *middl
 	return nil
 }
 
-func newServiceMetadataMiddleware_opProvisionPublicIpv4PoolCidr(region string) *awsmiddleware.RegisterServiceMetadata {
+func newServiceMetadataMiddleware_opAcceptAddressTransfer(region string) *awsmiddleware.RegisterServiceMetadata {
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
 		SigningName:   "ec2",
-		OperationName: "ProvisionPublicIpv4PoolCidr",
+		OperationName: "AcceptAddressTransfer",
 	}
 }
