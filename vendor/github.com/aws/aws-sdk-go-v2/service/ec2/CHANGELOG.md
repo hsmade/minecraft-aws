@@ -1,3 +1,63 @@
+# v1.77.0 (2022-12-20)
+
+* **Feature**: Adds support for pagination in the EC2 DescribeImages API.
+
+# v1.76.1 (2022-12-15)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.76.0 (2022-12-12)
+
+* **Feature**: This release updates DescribeFpgaImages to show supported instance types of AFIs in its response.
+
+# v1.75.0 (2022-12-05)
+
+* **Feature**: Documentation updates for EC2.
+
+# v1.74.1 (2022-12-02)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.74.0 (2022-11-29.2)
+
+* **Feature**: This release adds support for AWS Verified Access and the Hpc6id Amazon EC2 compute optimized instance type, which features 3rd generation Intel Xeon Scalable processors.
+
+# v1.73.0 (2022-11-29)
+
+* **Feature**: Introduces ENA Express, which uses AWS SRD and dynamic routing to increase throughput and minimize latency, adds support for trust relationships between Reachability Analyzer and AWS Organizations to enable cross-account analysis, and adds support for Infrastructure Performance metric subscriptions.
+
+# v1.72.1 (2022-11-22)
+
+* No change notes available for this release.
+
+# v1.72.0 (2022-11-18)
+
+* **Feature**: This release adds support for copying an Amazon Machine Image's tags when copying an AMI.
+
+# v1.71.0 (2022-11-17)
+
+* **Feature**: This release adds a new optional parameter "privateIpAddress" for the CreateNatGateway API. PrivateIPAddress will allow customers to select a custom Private IPv4 address instead of having it be auto-assigned.
+
+# v1.70.1 (2022-11-16)
+
+* No change notes available for this release.
+
+# v1.70.0 (2022-11-10)
+
+* **Feature**: This release adds a new price capacity optimized allocation strategy for Spot Instances to help customers optimize provisioning of Spot Instances via EC2 Auto Scaling, EC2 Fleet, and Spot Fleet. It allocates Spot Instances based on both spare capacity availability and Spot Instance price.
+
+# v1.69.0 (2022-11-09)
+
+* **Feature**: Amazon EC2 Trn1 instances, powered by AWS Trainium chips, are purpose built for high-performance deep learning training. u-24tb1.112xlarge and u-18tb1.112xlarge High Memory instances are purpose-built to run large in-memory databases.
+
+# v1.68.0 (2022-11-08)
+
+* **Feature**: This release enables sharing of EC2 Placement Groups across accounts and within AWS Organizations using Resource Access Manager
+
+# v1.67.0 (2022-11-07)
+
+* **Feature**: This release adds support for two new attributes for attribute-based instance type selection - NetworkBandwidthGbps and AllowedInstanceTypes.
+
 # v1.66.0 (2022-11-04)
 
 * **Feature**: This release adds API support for the recipient of an AMI account share to remove shared AMI launch permissions.
