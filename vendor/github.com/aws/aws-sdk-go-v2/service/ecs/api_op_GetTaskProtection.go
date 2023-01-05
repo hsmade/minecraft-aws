@@ -11,54 +11,52 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Modifies which task set in a service is the primary task set. Any parameters
-// that are updated on the primary task set in a service will transition to the
-// service. This is used when a service uses the EXTERNAL deployment controller
-// type. For more information, see Amazon ECS Deployment Types
-// (https://docs.aws.amazon.com/AmazonECS/latest/developerguide/deployment-types.html)
-// in the Amazon Elastic Container Service Developer Guide.
-func (c *Client) UpdateServicePrimaryTaskSet(ctx context.Context, params *UpdateServicePrimaryTaskSetInput, optFns ...func(*Options)) (*UpdateServicePrimaryTaskSetOutput, error) {
+// Retrieves the protection status of tasks in an Amazon ECS service.
+func (c *Client) GetTaskProtection(ctx context.Context, params *GetTaskProtectionInput, optFns ...func(*Options)) (*GetTaskProtectionOutput, error) {
 	if params == nil {
-		params = &UpdateServicePrimaryTaskSetInput{}
+		params = &GetTaskProtectionInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "UpdateServicePrimaryTaskSet", params, optFns, c.addOperationUpdateServicePrimaryTaskSetMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "GetTaskProtection", params, optFns, c.addOperationGetTaskProtectionMiddlewares)
 	if err != nil {
 		return nil, err
 	}
 
-	out := result.(*UpdateServicePrimaryTaskSetOutput)
+	out := result.(*GetTaskProtectionOutput)
 	out.ResultMetadata = metadata
 	return out, nil
 }
 
-type UpdateServicePrimaryTaskSetInput struct {
+type GetTaskProtectionInput struct {
 
 	// The short name or full Amazon Resource Name (ARN) of the cluster that hosts the
-	// service that the task set exists in.
+	// service that the task sets exist in.
 	//
 	// This member is required.
 	Cluster *string
 
-	// The short name or full Amazon Resource Name (ARN) of the task set to set as the
-	// primary task set in the deployment.
-	//
-	// This member is required.
-	PrimaryTaskSet *string
-
-	// The short name or full Amazon Resource Name (ARN) of the service that the task
-	// set exists in.
-	//
-	// This member is required.
-	Service *string
+	// A list of up to 100 task IDs or full ARN entries.
+	Tasks []string
 
 	noSmithyDocumentSerde
 }
 
-type UpdateServicePrimaryTaskSetOutput struct {
+type GetTaskProtectionOutput struct {
 
-	// The details about the task set.
-	TaskSet *types.TaskSet
+	// Any failures associated with the call.
+	Failures []types.Failure
+
+	// A list of tasks with the following information.
+	//
+	// * taskArn: The task ARN.
+	//
+	// *
+	// protectionEnabled: The protection status of the task. If scale-in protection is
+	// enabled for a task, the value is true. Otherwise, it is false.
+	//
+	// *
+	// expirationDate: The epoch time when protection for the task will expire.
+	ProtectedTasks []types.ProtectedTask
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
@@ -66,12 +64,12 @@ type UpdateServicePrimaryTaskSetOutput struct {
 	noSmithyDocumentSerde
 }
 
-func (c *Client) addOperationUpdateServicePrimaryTaskSetMiddlewares(stack *middleware.Stack, options Options) (err error) {
-	err = stack.Serialize.Add(&awsAwsjson11_serializeOpUpdateServicePrimaryTaskSet{}, middleware.After)
+func (c *Client) addOperationGetTaskProtectionMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	err = stack.Serialize.Add(&awsAwsjson11_serializeOpGetTaskProtection{}, middleware.After)
 	if err != nil {
 		return err
 	}
-	err = stack.Deserialize.Add(&awsAwsjson11_deserializeOpUpdateServicePrimaryTaskSet{}, middleware.After)
+	err = stack.Deserialize.Add(&awsAwsjson11_deserializeOpGetTaskProtection{}, middleware.After)
 	if err != nil {
 		return err
 	}
@@ -111,10 +109,10 @@ func (c *Client) addOperationUpdateServicePrimaryTaskSetMiddlewares(stack *middl
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addOpUpdateServicePrimaryTaskSetValidationMiddleware(stack); err != nil {
+	if err = addOpGetTaskProtectionValidationMiddleware(stack); err != nil {
 		return err
 	}
-	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opUpdateServicePrimaryTaskSet(options.Region), middleware.Before); err != nil {
+	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opGetTaskProtection(options.Region), middleware.Before); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -129,11 +127,11 @@ func (c *Client) addOperationUpdateServicePrimaryTaskSetMiddlewares(stack *middl
 	return nil
 }
 
-func newServiceMetadataMiddleware_opUpdateServicePrimaryTaskSet(region string) *awsmiddleware.RegisterServiceMetadata {
+func newServiceMetadataMiddleware_opGetTaskProtection(region string) *awsmiddleware.RegisterServiceMetadata {
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
 		SigningName:   "ecs",
-		OperationName: "UpdateServicePrimaryTaskSet",
+		OperationName: "GetTaskProtection",
 	}
 }
