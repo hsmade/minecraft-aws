@@ -4,114 +4,88 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ecs"
-	ecsTypes "github.com/aws/aws-sdk-go-v2/service/ecs/types"
+	ec2Types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	efsTypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	route53Types "github.com/aws/aws-sdk-go-v2/service/route53/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/pkg/errors"
 	"os"
-	"strings"
-	"time"
 )
 
 type Server struct {
 	Name          string // task definition family name
-	Cluster       string
 	DNSZoneID     string
+	FileSystem    efsTypes.FileSystemDescription
 	Tags          map[string]string
-	EcsClient     ecsClient
 	Route53Client route53Client
 	Ec2Client     ec2Client
+	EfsClient     efsClient
 }
 
 type ServerStatus struct {
 	Name          string
-	HealthStatus  string
-	DesiredStatus string
-	LastStatus    string
-	taskID        string
+	InstanceState string
 	IP            string
 }
 
-func (S Server) getRunningTask() (*ecsTypes.Task, error) {
-	output, err := S.EcsClient.ListTasks(context.TODO(), &ecs.ListTasksInput{
-		Cluster: &S.Cluster,
-		Family:  &S.Name,
+func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
+	output, err := S.Ec2Client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
+		Filters: []ec2Types.Filter{
+			{
+				Name:   aws.String("tag:Name"),
+				Values: []string{S.Name},
+			},
+		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "listing tasks")
-	}
-	if len(output.TaskArns) == 0 {
-		return nil, nil
+		return nil, errors.Wrapf(err, "listing EC2 instances with name %s", S.Name)
 	}
 
-	tasks, err := S.EcsClient.DescribeTasks(context.TODO(), &ecs.DescribeTasksInput{
-		Tasks:   output.TaskArns,
-		Cluster: &S.Cluster,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "getting tasks")
-	}
-
-	for _, task := range tasks.Tasks {
-		if *task.DesiredStatus != "RUNNING" {
-			continue
+	for _, reservation := range output.Reservations {
+		for _, instance := range reservation.Instances {
+			if instance.State.Name == "Running" {
+				return &instance, nil
+			}
 		}
-		return &task, nil
 	}
 	return nil, nil
 }
 
+// Status finds a running instance and returns its info
 func (S Server) Status() (*ServerStatus, error) {
-	task, err := S.getRunningTask()
+	instance, err := S.getRunningInstance()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting running task")
+		return nil, errors.Wrap(err, "getting running instance")
 	}
-	if task == nil {
-		return nil, errors.New("no running task found")
-	}
-
-	status := "NONE"
-	for _, container := range task.Containers {
-		if *container.Name != "main" {
-			continue
-		}
-		status = string(container.HealthStatus) //Unknown, Healthy
-	}
-
-	ip, err := S.getIpForTask(task)
-	if err != nil {
-		ip = "unknown"
+	if instance == nil {
+		return nil, errors.New("no running instance found")
 	}
 
 	return &ServerStatus{
 		Name:          S.Name,
-		HealthStatus:  status,              // UNKNOWN, HEALTHY
-		DesiredStatus: *task.DesiredStatus, // STOPPED, RUNNING
-		LastStatus:    *task.LastStatus,    // STOPPED, PENDING, PROVISIONING, RUNNING
-		taskID:        *task.TaskArn,
-		IP:            ip,
+		InstanceState: string(instance.State.Name),
+		IP:            *instance.PublicIpAddress,
 	}, nil
 }
 
+// Stop will terminate the running instance
 func (S Server) Stop() error {
-	task, err := S.getRunningTask()
+	instance, err := S.getRunningInstance()
 	if err != nil {
-		return errors.Wrap(err, "getting running task")
+		return errors.Wrap(err, "getting running instance")
 	}
-	if task == nil {
-		return errors.New("no running task found")
+	if instance == nil {
+		return errors.New("no running instance found")
 	}
 
 	errDNS := S.deleteDNSRecord() // needs to happen first, save error for later
 
-	_, err = S.EcsClient.StopTask(context.TODO(), &ecs.StopTaskInput{
-		Task:    task.TaskArn,
-		Cluster: &S.Cluster,
+	_, err = S.Ec2Client.TerminateInstances(context.TODO(), &ec2.TerminateInstancesInput{
+		InstanceIds: []string{*instance.InstanceId},
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to stop task")
+		return errors.Wrap(err, "failed to stop instance")
 	}
 
 	return errors.Wrap(errDNS, "deleting DNS record")
@@ -162,12 +136,7 @@ func (S Server) modifyDNSRecord(ip string, action route53Types.ChangeAction) err
 	return err
 }
 
-func (S Server) createOrUpdateDNSRecord() error {
-	ip, err := S.getIP(20 * time.Second)
-	if err != nil {
-		return errors.Wrap(err, "getting IP")
-	}
-
+func (S Server) createOrUpdateDNSRecord(ip string) error {
 	output, err := S.Route53Client.ListResourceRecordSets(context.TODO(), &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    &S.DNSZoneID,
 		MaxItems:        aws.Int32(1),
@@ -184,90 +153,51 @@ func (S Server) createOrUpdateDNSRecord() error {
 	return errors.Wrap(S.modifyDNSRecord(ip, route53Types.ChangeActionUpsert), "updating DNS record")
 }
 
-func (S Server) getIpForTask(task *ecsTypes.Task) (string, error) {
-	fmt.Print("looping over attachments\n")
-	for _, attachment := range task.Attachments {
-		for _, detail := range attachment.Details {
-			fmt.Printf("looping over detail: %+v for attachment: %+v\n", detail, attachment)
-			if *detail.Name == "networkInterfaceId" && detail.Value != nil && *detail.Value != "" {
-				output, err := S.Ec2Client.DescribeNetworkInterfaces(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
-					NetworkInterfaceIds: []string{*detail.Value},
-				})
-				if err != nil {
-					fmt.Printf("DescribeNetworkInterfaces got error: %v\n", err)
-					continue
-				}
-
-				if len(output.NetworkInterfaces) == 0 {
-					fmt.Println("no network interfaces yet")
-					continue
-				}
-
-				if output.NetworkInterfaces[0].Association == nil {
-					fmt.Println("association is still nil")
-					continue
-				}
-
-				fmt.Printf("network interfaces: %+v\n", output.NetworkInterfaces)
-				return *output.NetworkInterfaces[0].Association.PublicIp, nil
-			}
-		}
-	}
-	return "", errors.New("no IP found")
-}
-
-func (S Server) getIP(timeout time.Duration) (string, error) {
-	start := time.Now()
-
-	for {
-		if time.Now().After(start.Add(timeout)) {
-			return "", errors.New("timeout waiting for server to get IP")
-		}
-
-		task, err := S.getRunningTask()
-		fmt.Printf("loop: task: %+v err: %v\n", task, err)
-
-		if task == nil {
-			continue // no running task yet
-		}
-
-		time.Sleep(1 * time.Second)
-		ip, err := S.getIpForTask(task)
-		if err == nil {
-			return ip, nil
-		}
-	}
-}
-
 func (S Server) Start() error {
-	task, err := S.getRunningTask()
+	instance, err := S.getRunningInstance()
 	if err != nil {
-		return errors.Wrap(err, "getting running task")
+		return errors.Wrap(err, "getting running instance")
 	}
-	if task != nil {
-		return errors.New(fmt.Sprintf("found already running task with ARN: %s", *task.TaskArn))
+	if instance != nil {
+		return errors.New(fmt.Sprintf("found already running instance with ID: %s", *instance.InstanceId))
 	}
 
-	fmt.Print("creating task set\n")
-	output, err := S.EcsClient.RunTask(context.TODO(), &ecs.RunTaskInput{
-		Cluster:              &S.Cluster,
-		TaskDefinition:       &S.Name,
-		EnableECSManagedTags: true,
-		//EnableExecuteCommand: true,
-		Count: aws.Int32(1),
-		NetworkConfiguration: &ecsTypes.NetworkConfiguration{
-			AwsvpcConfiguration: &ecsTypes.AwsVpcConfiguration{
-				AssignPublicIp: "ENABLED",
-				Subnets:        strings.Split(os.Getenv("SUBNETS"), ","),
-				SecurityGroups: []string{os.Getenv("ECS_SG_ID")},
+	fmt.Print("creating instance\n")
+	// find SG
+	// find SSM role
+	// find subnet
+	// get instance type from env
+	// find ubuntu image / get from env
+	result, err := S.Ec2Client.RunInstances(context.TODO(), &ec2.RunInstancesInput{
+		BlockDeviceMappings: nil,
+		IamInstanceProfile: &ec2Types.IamInstanceProfileSpecification{
+			Name: aws.String("ssm"),
+		},
+		ImageId:                           nil, // FIXME: get from env?
+		InstanceInitiatedShutdownBehavior: "terminate",
+		InstanceType:                      "", // FIXME: get from env?
+		SecurityGroups:                    []string{"minecraft"},
+		//SubnetId:                          nil,
+		TagSpecifications: []ec2Types.TagSpecification{
+			{
+				Tags: []ec2Types.Tag{
+					{
+						Key:   aws.String("Name"),
+						Value: aws.String(S.Name),
+					},
+				},
 			},
 		},
+		UserData: nil, // FIXME: get from file
 	})
-	fmt.Printf("RunTask output: %+v with error: %v\n", output, err)
 	if err != nil {
-		return errors.Wrap(err, "creating task set")
+		return errors.Wrap(err, "creating instance")
 	}
 
+	instance = &result.Instances[0] // FIXME: runtime error
+
+	// associate public IP??
+
 	fmt.Print("creating DNS record\n")
-	return errors.Wrap(S.createOrUpdateDNSRecord(), "setting DNS record")
+	return errors.Wrap(S.createOrUpdateDNSRecord(*instance.PublicIpAddress), "setting DNS record")
 }

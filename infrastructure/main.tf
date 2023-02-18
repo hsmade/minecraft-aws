@@ -1,35 +1,3 @@
-resource "aws_cloudwatch_log_group" "ecs-cluster" {
-  name = "minecraft"
-  retention_in_days = 14
-}
-
-resource "aws_ecs_cluster" "minecraft" {
-  name = "minecraft"
-
-  configuration {
-    execute_command_configuration {
-      logging = "OVERRIDE"
-
-      log_configuration {
-        cloud_watch_encryption_enabled = true
-        cloud_watch_log_group_name     = aws_cloudwatch_log_group.ecs-cluster.name
-      }
-    }
-  }
-}
-
-resource "aws_ecs_cluster_capacity_providers" "minecraft" {
-  cluster_name = aws_ecs_cluster.minecraft.name
-
-  capacity_providers = ["FARGATE"]
-
-  default_capacity_provider_strategy {
-    base              = 1
-    weight            = 100
-    capacity_provider = "FARGATE"
-  }
-}
-
 resource "aws_api_gateway_rest_api" "minecraft" {
   name = "minecraft"
 }
@@ -56,85 +24,6 @@ resource "aws_api_gateway_rest_api_policy" "storage_list" {
   rest_api_id = aws_api_gateway_rest_api.minecraft.id
 }
 
-data "aws_region" "default" {}
-data "aws_caller_identity" "current" {}
-
-resource "aws_ecs_cluster_capacity_providers" "fargate" {
-  cluster_name       = aws_ecs_cluster.minecraft.name
-  capacity_providers = ["FARGATE"]
-  default_capacity_provider_strategy {
-    capacity_provider = "FARGATE"
-    base              = 1
-    weight            = 100
-  }
-}
-
-data "aws_iam_policy_document" "ecs_assume_role" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-    principals {
-      identifiers = ["ecs-tasks.amazonaws.com"]
-      type        = "Service"
-    }
-    condition {
-      test     = "ArnLike"
-      values   = ["arn:aws:ecs:${data.aws_region.default.name}:${data.aws_caller_identity.current.account_id}:*"]
-      variable = "aws:SourceArn"
-    }
-    condition {
-      test     = "StringEquals"
-      values   = [data.aws_caller_identity.current.account_id]
-      variable = "aws:SourceAccount"
-    }
-  }
-}
-
-resource "aws_iam_role" "ecs_sidecars" {
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
-  name               = "ecs_sidecars"
-}
-
-resource "aws_iam_role_policy_attachment" "backup_restore" {
-  policy_arn = aws_iam_policy.ecs_backup_restore.arn
-  role       = aws_iam_role.ecs_sidecars.name
-}
-
-resource "aws_iam_role" "ecs_execution_role" {
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
-  name               = "ecs_execution_role"
-}
-
-data "aws_iam_policy_document" "ecs_execution_role_rules" {
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
-    actions = [
-      "ecr:GetAuthorizationToken",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:BatchGetImage",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "logs:CreateLogGroup",
-      "kms:GetPublicKey",
-      "kms:Decrypt",
-      "kms:GenerateDataKey",
-      "kms:DescribeKey",
-    ]
-  }
-}
-
-resource "aws_iam_policy" "ecs_execution_role_rules" {
-  name   = "ecs_execution_role_rules"
-  policy = data.aws_iam_policy_document.ecs_execution_role_rules.json
-}
-
-resource "aws_iam_role_policy_attachment" "allow_ecr" {
-  policy_arn = aws_iam_policy.ecs_execution_role_rules.arn
-  role       = aws_iam_role.ecs_execution_role.name
-}
-
 resource "aws_route53_zone" "domain" {
   name = var.domain_name
 }
@@ -158,8 +47,7 @@ data "aws_subnets" "subnets" {
 
 data "aws_vpc" "vpc" {}
 
-# FIXME: want this per server, but start() needs it in env
-resource "aws_security_group" "ecs" {
+resource "aws_security_group" "minecraft" {
   name = "minecraft"
 
   ingress {
@@ -173,9 +61,9 @@ resource "aws_security_group" "ecs" {
   }
 
   ingress {
-    description = "RCON"
-    from_port = 4326
-    to_port   = 4327
+    description = "metrics"
+    from_port = 8080
+    to_port   = 8080
     protocol  = "TCP"
     cidr_blocks = [
       "${var.home_ip}/32"
@@ -184,7 +72,7 @@ resource "aws_security_group" "ecs" {
 
   egress {
     from_port = 0
-    to_port   = -1
+    to_port   = 0
     protocol  = "ALL"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -199,7 +87,32 @@ resource "aws_security_group_rule" "nfs" {
   from_port         = 2049
   protocol          = "TCP"
   security_group_id = aws_security_group.efs.id
-  source_security_group_id = aws_security_group.ecs.id
+  source_security_group_id = aws_security_group.minecraft.id
   to_port           = 2049
   type              = "ingress"
 }
+
+#resource "aws_iam_role" "ssm" {
+#  assume_role_policy = ""
+#}
+#
+#resource "aws_backup_plan" "efs" {
+#  name = "minecraft EFS daily backup"
+#  rule {
+#    rule_name         = "minecraft_efs_daily_backup"
+#    target_vault_name = "minecraft"
+#    schedule = "cront(0 0 * * ? *)"
+#
+#    lifecycle {
+#      delete_after = 14
+#    }
+#  }
+#
+#  advanced_backup_setting {
+#    resource_type = "EFS"
+#    backup_options = {}
+#  }
+#}
+# FIXME: missing
+# iam role for ssm + efs
+# backup policy for EFS

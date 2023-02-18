@@ -47,12 +47,10 @@ resource "aws_lambda_function" "function" {
   package_type  = "Image"
   environment {
     variables = {
-      CLUSTER     = var.cluster_name
       DNS_ZONE_ID = var.dns_zone_id
       DNS_ZONE    = var.dns_zone
       SUBNETS     = join(",", var.subnets)
       CORS_DOMAIN = "https://${var.cors_domain}"
-      ECS_SG_ID   = var.ecs_sg_id
     }
   }
 
