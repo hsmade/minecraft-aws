@@ -76,6 +76,7 @@ func (S Server) Status() (*ServerStatus, error) {
 		InstanceState: string(instance.State.Name),
 		IP:            *instance.PublicIpAddress,
 	}, nil
+	// FIXME: add status check status (Initializing / ...?)
 }
 
 // Stop will terminate the running instance
@@ -186,9 +187,8 @@ func (S Server) Start() error {
 		InstanceInitiatedShutdownBehavior: "terminate",
 		InstanceType:                      "t2.medium", // FIXME: get from env?
 		SecurityGroups:                    []string{"minecraft"},
-		//SubnetId:                          nil,
-		MaxCount: aws.Int32(1),
-		MinCount: aws.Int32(1),
+		MaxCount:                          aws.Int32(1),
+		MinCount:                          aws.Int32(1),
 		TagSpecifications: []ec2Types.TagSpecification{
 			{
 				ResourceType: ec2Types.ResourceTypeInstance,
@@ -207,10 +207,12 @@ func (S Server) Start() error {
 		return errors.Wrap(err, "creating instance")
 	}
 
-	instance = &result.Instances[0] // FIXME: runtime error
-	// wait for instance to become pending so we have an IP
+	instance = &result.Instances[0] // FIXME: possible runtime error
+	fmt.Printf("created instance with id %s\n", *instance.InstanceId)
+
 	var IP *string
 	startTime := time.Now()
+	// FIXME: takes too long
 	for {
 		if time.Now().After(startTime.Add(time.Second * 30)) {
 			return errors.New("timeout waiting for new instance")
@@ -219,8 +221,8 @@ func (S Server) Start() error {
 		output, err := S.Ec2Client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
 			Filters: []ec2Types.Filter{
 				{
-					Name:   aws.String("tag:Name"),
-					Values: []string{S.Name},
+					Name:   aws.String("instance-id"),
+					Values: []string{*instance.InstanceId},
 				},
 			},
 		})
