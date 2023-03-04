@@ -65,7 +65,7 @@ func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 
 // getHealthState returns the latest health check status for an instance
 func (S Server) getHealthState(instanceId string) (string, error) {
-	var status *ec2.DescribeInstanceStatusOutput
+	status := &ec2.DescribeInstanceStatusOutput{}
 	var err error
 
 	for {
