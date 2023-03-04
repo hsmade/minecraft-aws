@@ -26,13 +26,13 @@
       </v-tooltip>
       <v-card-text>
         <v-btn
-            v-if="server.last_status === 'NONE'"
+            v-if="server.instance_state === 'NONE'"
             @click="start_server()"
             color="primary"
             :loading="server.clicked"
         >Start</v-btn>
         <v-btn
-            v-if="server.last_status !== 'NONE'"
+            v-if="server.instance_state !== 'NONE'"
             @click="stop_server()"
             color="primary"
             :loading="server.clicked"
@@ -103,22 +103,22 @@
          * initializing
          */
         if (this.wantedState !== this.setState) return 10
-        if (this.server.last_status === "NONE") return 0
-        if (this.server.last_status === "stopped") return 0
-        if (this.server.last_status === "pending") return 25
-        if (this.server.last_status === "running") return 100
+        if (this.server.instance_state === "NONE") return 0
+        if (this.server.instance_state === "pending") return 25
+        if (this.server.instance_state === "running") return 50
         if (this.server.desired_status === "stopped") return 50
-        // last_status is pending
-        if (this.server.health_status === "UNKNOWN") return 50
-        if (this.server.health_status === "HEALTHY") return 75
+        // instance_state is pending
+        if (this.server.health_check_status === "initializing") return 75
+        if (this.server.health_check_status === "not-applicable") return 100
+        if (this.server.health_check_status === "ok") return 100
         return 0
       }
     },
     async created() {
-      this.setState = this.wantedState = this.server.last_status === "NONE"?"STOP":"START"
+      this.setState = this.wantedState = this.server.instance_state === "NONE"?"STOP":"START"
     },
     async updated() {
-      this.setState = this.server.last_status === "NONE"?"STOP":"START"
+      this.setState = this.server.instance_state === "NONE"?"STOP":"START"
     },
 
   }

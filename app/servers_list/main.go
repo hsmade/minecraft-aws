@@ -18,10 +18,11 @@ func wrapError(status int, err error) (events.APIGatewayProxyResponse, error) {
 }
 
 type Response struct {
-	Name       string            `json:"name"`
-	LastStatus string            `json:"last_status"`
-	Tags       map[string]string `json:"tags"`
-	IP         string            `json:"ip"`
+	Name             string            `json:"name"`
+	InstanceState    string            `json:"instance_state"`
+	HealthCheckState string            `json:"health_check_state"`
+	Tags             map[string]string `json:"tags"`
+	IP               string            `json:"ip"`
 }
 
 func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -38,15 +39,17 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 	var responses []Response
 	for _, server := range serverList {
 		response := Response{
-			Name:       server.Name,
-			Tags:       server.Tags,
-			LastStatus: "NONE",
+			Name:             server.Name,
+			Tags:             server.Tags,
+			InstanceState:    "NONE",
+			HealthCheckState: "NONE",
 		}
 
 		fmt.Printf("checking status for server '%s'\n", server.Name)
 		status, err := server.Status()
 		if err == nil {
-			response.LastStatus = status.InstanceState
+			response.InstanceState = status.InstanceState
+			response.HealthCheckState = status.HealthcheckState
 			response.IP = status.IP
 		}
 		responses = append(responses, response)
@@ -86,13 +89,13 @@ func main() {
 	//	response := Response{
 	//		Name:       server.Name,
 	//		Tags:       server.Tags,
-	//		LastStatus: "NONE",
+	//		InstanceState: "NONE",
 	//	}
 	//
 	//	fmt.Printf("checking status for server '%s'\n", server.Name)
 	//	status, err := server.Status()
 	//	if err == nil {
-	//		response.LastStatus = status.InstanceState
+	//		response.InstanceState = status.InstanceState
 	//		response.IP = status.IP
 	//	}
 	//	responses = append(responses, response)

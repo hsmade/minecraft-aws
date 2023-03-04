@@ -81,7 +81,10 @@ func (S Server) Status() (*ServerStatus, error) {
 		},
 	})
 
-	healthCheckState := status.InstanceStatuses[len(status.InstanceStatuses)-1].InstanceStatus.Status
+	healthCheckState := "unknown"
+	if len(status.InstanceStatuses) > 0 {
+		healthCheckState = string(status.InstanceStatuses[len(status.InstanceStatuses)-1].InstanceStatus.Status)
+	}
 	if status.NextToken != nil {
 		healthCheckState = "unknown - next token"
 	}
@@ -89,7 +92,7 @@ func (S Server) Status() (*ServerStatus, error) {
 	return &ServerStatus{
 		Name:             S.Name,
 		InstanceState:    string(instance.State.Name),
-		HealthcheckState: string(healthCheckState),
+		HealthcheckState: healthCheckState,
 		IP:               *instance.PublicIpAddress,
 	}, nil
 }
