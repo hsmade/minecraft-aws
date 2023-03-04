@@ -124,6 +124,7 @@ module "servers_list" {
   path         = "servers"
   method       = "GET"
   iam_actions = [
-    "elasticfilesystem:DescribeFileSystems"
+    "elasticfilesystem:DescribeFileSystems",
+    "ec2:DescribeInstances",
   ]
 }

@@ -55,6 +55,7 @@ func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 			}
 		}
 	}
+	fmt.Println("no instances found")
 	return nil, nil
 }
 
