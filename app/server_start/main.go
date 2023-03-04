@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	"minecraft-catalog/business/catalog"
 	"net/http"
 	"os"
@@ -51,8 +52,8 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 }
 
 func main() {
-	//lambda.Start(HandleRequest)
-	HandleRequest(events.APIGatewayProxyRequest{
-		QueryStringParameters: map[string]string{"name": "test"},
-	})
+	lambda.Start(HandleRequest)
+	//HandleRequest(events.APIGatewayProxyRequest{
+	//	QueryStringParameters: map[string]string{"name": "test"},
+	//})
 }
