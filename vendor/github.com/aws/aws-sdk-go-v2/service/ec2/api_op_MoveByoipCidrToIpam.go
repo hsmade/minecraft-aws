@@ -60,7 +60,8 @@ type MoveByoipCidrToIpamInput struct {
 
 type MoveByoipCidrToIpamOutput struct {
 
-	// The BYOIP CIDR.
+	// Information about an address range that is provisioned for use with your Amazon
+	// Web Services resources through bring your own IP addresses (BYOIP).
 	ByoipCidr *types.ByoipCidr
 
 	// Metadata pertaining to the operation's result.
