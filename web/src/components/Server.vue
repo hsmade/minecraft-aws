@@ -19,7 +19,7 @@
             :loading="server.clicked"
         >Stop</v-btn>
         <v-list>
-          <v-list-item>
+          <v-list-item v-if="server.ip!==''">
             <v-list-item-title>IP</v-list-item-title>
             <v-list-item-subtitle>{{server.ip}}</v-list-item-subtitle>
           </v-list-item>
@@ -29,20 +29,20 @@
               <template v-slot:activator="{ on, attrs }">
                 <v-list-item-subtitle v-bind="attrs" v-on="on">
                   <!-- instance state -->
-                  <v-icon v-if="this.server.instance_state==='running'" color="green">mdi-checkbox-marked-circle-outline</v-icon>
+                  <v-icon v-if="server.instance_state==='running'" color="green">mdi-checkbox-marked-circle-outline</v-icon>
                   <v-icon v-else-if="startable()" color="red">mdi-close-circle-outline</v-icon>
                   <v-progress-circular
                       v-else
-                      :color="this.server.instance_state==='shutting-down'?'red':'green'"
+                      :color="server.instance_state==='shutting-down'?'red':'green'"
                       indeterminate
                     ></v-progress-circular>
                   <v-spacer></v-spacer>
                   <!-- health check state -->
-                  <v-icon v-if="this.server.health_check_state==='ok'" color="green">mdi-checkbox-marked-circle-outline</v-icon>
-                  <v-icon v-else-if="this.server.health_check_state==='NONE'" color="red">mdi-close-circle-outline</v-icon>
+                  <v-icon v-if="server.health_check_state==='ok'" color="green">mdi-checkbox-marked-circle-outline</v-icon>
+                  <v-icon v-else-if="server.health_check_state==='NONE'" color="red">mdi-close-circle-outline</v-icon>
                   <v-progress-circular
                       v-else
-                      :color="this.server.health_check_state==='initializing'?'green':'red'"
+                      :color="server.health_check_state==='initializing'?'green':'red'"
                       indeterminate
                     ></v-progress-circular>
                 </v-list-item-subtitle>
@@ -94,7 +94,7 @@
         this.$emit('clicked', '')
       },
       stateStable() {
-        return this.server.health_check_state === "ok" || this.server.instance_state === "terminated"
+        return this.server.health_check_state === "ok" || ['NONE', 'terminated', 'running'].includes(this.server.instance_state)
       },
       startable() {
         return ['terminated', 'NONE'].includes(this.server.instance_state)
