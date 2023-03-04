@@ -36,7 +36,6 @@
                       :color="server.instance_state==='shutting-down'?'red':'green'"
                       indeterminate
                     ></v-progress-circular>
-                  <v-spacer></v-spacer>
                   <!-- health check state -->
                   <v-icon v-if="server.health_check_state==='ok'" color="green">mdi-checkbox-marked-circle-outline</v-icon>
                   <v-icon v-else-if="server.health_check_state==='NONE'" color="red">mdi-close-circle-outline</v-icon>
