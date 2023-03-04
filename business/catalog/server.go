@@ -235,7 +235,7 @@ func (S Server) Start() error {
 	startTime := time.Now()
 	fmt.Println("waiting for IP")
 	for {
-		if time.Now().After(startTime.Add(time.Second * 30)) {
+		if time.Now().After(startTime.Add(time.Second * 10)) {
 			fmt.Println("timeout waiting for IP")
 			return errors.New("timeout waiting for new instance")
 		}
@@ -256,7 +256,9 @@ func (S Server) Start() error {
 		// find running or pending
 		for _, reservation := range output.Reservations {
 			for _, instance := range reservation.Instances {
+				fmt.Printf("instance %s with state %s\n", *instance.InstanceId, instance.State.Name)
 				if instance.State.Name == "pending" || instance.State.Name == "running" {
+					fmt.Println("found IP")
 					IP = instance.PublicIpAddress
 					break
 				}
