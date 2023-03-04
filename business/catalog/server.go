@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/pkg/errors"
 	"os"
+	"time"
 )
 
 type Server struct {
@@ -198,9 +199,40 @@ func (S Server) Start() error {
 	}
 
 	instance = &result.Instances[0] // FIXME: runtime error
+	// wait for instance to become pending so we have an IP
+	var IP *string
+	startTime := time.Now()
+	for {
+		if time.Now().After(startTime.Add(time.Second * 30)) {
+			return errors.New("timeout waiting for new instance")
+		}
+		time.Sleep(time.Millisecond * 250)
+		output, err := S.Ec2Client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
+			Filters: []ec2Types.Filter{
+				{
+					Name:   aws.String("tag:Name"),
+					Values: []string{S.Name},
+				},
+			},
+		})
+		if err != nil {
+			fmt.Printf("failed to list new instance: %v\n", err)
+			continue
+		}
 
-	// associate public IP??
+		if len(output.Reservations) != 1 {
+			continue
+		}
+		if len(output.Reservations[0].Instances) != 1 {
+			continue
+		}
+		if output.Reservations[0].Instances[0].PublicIpAddress == nil {
+			continue
+		}
+		IP = output.Reservations[0].Instances[0].PublicIpAddress
+		break
+	}
 
 	fmt.Print("creating DNS record\n")
-	return errors.Wrap(S.createOrUpdateDNSRecord(*instance.PublicIpAddress), "setting DNS record")
+	return errors.Wrap(S.createOrUpdateDNSRecord(*IP), "setting DNS record")
 }
