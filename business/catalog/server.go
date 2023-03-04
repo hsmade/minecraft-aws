@@ -3,6 +3,7 @@ package catalog
 import (
 	"context"
 	_ "embed"
+	"encoding/base64"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2Types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -32,7 +33,7 @@ type ServerStatus struct {
 }
 
 //go:embed metadata.sh
-var metadata string
+var metadata []byte
 
 func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 	output, err := S.Ec2Client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
@@ -199,8 +200,9 @@ func (S Server) Start() error {
 				},
 			},
 		},
-		UserData: aws.String(metadata),
+		UserData: aws.String(base64.StdEncoding.EncodeToString(metadata)),
 	})
+
 	if err != nil {
 		return errors.Wrap(err, "creating instance")
 	}
