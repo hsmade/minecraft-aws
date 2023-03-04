@@ -206,7 +206,7 @@ func (S Server) Start() error {
 		ImageId:                           aws.String("ami-06d94a781b544c133"), // FIXME: get from env?
 		InstanceInitiatedShutdownBehavior: "terminate",
 		InstanceType:                      "t2.medium", // FIXME: get from env?
-		SecurityGroups:                    []string{"minecraft", "minecraft-aws"},
+		SecurityGroups:                    []string{"minecraft", "minecraft-efs"},
 		MaxCount:                          aws.Int32(1),
 		MinCount:                          aws.Int32(1),
 		TagSpecifications: []ec2Types.TagSpecification{
@@ -224,6 +224,7 @@ func (S Server) Start() error {
 	})
 
 	if err != nil {
+		fmt.Println(err)
 		return errors.Wrap(err, "creating instance")
 	}
 
