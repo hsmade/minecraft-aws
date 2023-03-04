@@ -52,7 +52,7 @@ func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 	for _, reservation := range output.Reservations {
 		for _, instance := range reservation.Instances {
 			fmt.Printf("found instance %s with state %s\n", *instance.InstanceId, instance.State.Name)
-			if instance.State.Name == "running" {
+			if instance.State.Name == "running" || instance.State.Name == "pending" {
 				return &instance, nil
 			}
 		}
@@ -72,6 +72,13 @@ func (S Server) Status() (*ServerStatus, error) {
 		return nil, errors.New("no running instance found")
 	}
 
+	serverStatus := ServerStatus{
+		Name:             S.Name,
+		InstanceState:    string(instance.State.Name),
+		HealthcheckState: "unknown",
+		IP:               *instance.PublicIpAddress,
+	}
+
 	status, err := S.Ec2Client.DescribeInstanceStatus(context.TODO(), &ec2.DescribeInstanceStatusInput{
 		Filters: []ec2Types.Filter{
 			{
@@ -80,21 +87,18 @@ func (S Server) Status() (*ServerStatus, error) {
 			},
 		},
 	})
+	if err != nil {
+		return &serverStatus, nil // no further info
+	}
 
-	healthCheckState := "unknown"
 	if len(status.InstanceStatuses) > 0 {
-		healthCheckState = string(status.InstanceStatuses[len(status.InstanceStatuses)-1].InstanceStatus.Status)
+		serverStatus.HealthcheckState = string(status.InstanceStatuses[len(status.InstanceStatuses)-1].InstanceStatus.Status)
 	}
-	if status.NextToken != nil {
-		healthCheckState = "unknown - next token"
+	if status.NextToken != nil { // FIXME: follow next token
+		serverStatus.HealthcheckState = "unknown - next token"
 	}
 
-	return &ServerStatus{
-		Name:             S.Name,
-		InstanceState:    string(instance.State.Name),
-		HealthcheckState: healthCheckState,
-		IP:               *instance.PublicIpAddress,
-	}, nil
+	return &serverStatus, nil
 }
 
 // Stop will terminate the running instance
