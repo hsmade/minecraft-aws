@@ -178,6 +178,8 @@ func (S Server) Start() error {
 		InstanceType:                      "", // FIXME: get from env?
 		SecurityGroups:                    []string{"minecraft"},
 		//SubnetId:                          nil,
+		MaxCount: aws.Int32(1),
+		MinCount: aws.Int32(1),
 		TagSpecifications: []ec2Types.TagSpecification{
 			{
 				Tags: []ec2Types.Tag{

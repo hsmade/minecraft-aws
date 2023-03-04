@@ -55,11 +55,7 @@ module "server_start" {
   path         = "server"
   method       = "PUT"
   iam_actions = [
-    "ecs:RunTask",
-    "iam:PassRole", # FIXME: for role/ecs_execution_role
-    "ecs:ListTasks",
-    "ecs:DescribeTasks",
-    "ec2:DescribeNetworkInterfaces",
+    "ec2:DescribeInstances",
     "route53:ListResourceRecordSets",
     "route53:ChangeResourceRecordSets",
   ]
@@ -130,10 +126,6 @@ module "servers_list" {
   path         = "servers"
   method       = "GET"
   iam_actions = [
-    "ecs:ListTaskDefinitionFamilies",
-    "ecs:DescribeTaskDefinition",
-    "ecs:ListTasks",
-    "ecs:DescribeTasks",
-    "ec2:DescribeNetworkInterfaces",
+    "elasticfilesystem:DescribeFileSystems"
   ]
 }
