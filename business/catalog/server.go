@@ -80,12 +80,7 @@ func (S Server) Status() (*ServerStatus, error) {
 	}
 
 	status, err := S.Ec2Client.DescribeInstanceStatus(context.TODO(), &ec2.DescribeInstanceStatusInput{
-		Filters: []ec2Types.Filter{
-			{
-				Name:   aws.String("instance-id"),
-				Values: []string{*instance.InstanceId},
-			},
-		},
+		InstanceIds: []string{*instance.InstanceId},
 	})
 	if err != nil {
 		return &serverStatus, nil // no further info

@@ -87,8 +87,8 @@ func main() {
 	//var responses []Response
 	//for _, server := range serverList {
 	//	response := Response{
-	//		Name:       server.Name,
-	//		Tags:       server.Tags,
+	//		Name:          server.Name,
+	//		Tags:          server.Tags,
 	//		InstanceState: "NONE",
 	//	}
 	//
@@ -96,6 +96,7 @@ func main() {
 	//	status, err := server.Status()
 	//	if err == nil {
 	//		response.InstanceState = status.InstanceState
+	//		response.HealthCheckState = status.HealthcheckState
 	//		response.IP = status.IP
 	//	}
 	//	responses = append(responses, response)

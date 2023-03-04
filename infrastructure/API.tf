@@ -102,6 +102,7 @@ module "server_status" {
   method       = "GET"
   iam_actions = [
     "ec2:DescribeInstances",
+    "ec2:DescribeInstanceStatus",
   ]
 }
 
@@ -127,5 +128,6 @@ module "servers_list" {
   iam_actions = [
     "elasticfilesystem:DescribeFileSystems",
     "ec2:DescribeInstances",
+    "ec2:DescribeInstanceStatus",
   ]
 }
