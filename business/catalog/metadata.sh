@@ -10,10 +10,11 @@ idle_time_timeout=900
 apt update
 apt-get -y install --no-install-recommends nfs-common wget tar gzip openjdk-19-jre-headless screen
 wget https://github.com/itzg/mc-monitor/releases/download/0.11.0/mc-monitor_0.11.0_linux_amd64.tar.gz -O - | tar xzvf - -C /usr/local/bin/
-file_system_id_1=fs-00d665d419d8c44ad
-mount -t nfs4 -o vers=4.1 \$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).\${file_system_id_1}.efs.\$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print \$4}').amazonaws.com:/ /mnt
-cd /mnt && screen -d -m ./run.sh
 mc-monitor  export-for-prometheus -servers localhost &
+
+file_system_id_1=FSID
+mount -t nfs4 -o vers=4.1 \${file_system_id_1}.efs.\$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print \$4}').amazonaws.com:/ /mnt
+cd /mnt && screen -d -m ./run.sh
 
 boot=\$(date +%s)
 while true

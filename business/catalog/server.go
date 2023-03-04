@@ -1,12 +1,14 @@
 package catalog
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"encoding/base64"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2Types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/efs"
 	efsTypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	route53Types "github.com/aws/aws-sdk-go-v2/service/route53/types"
@@ -189,12 +191,13 @@ func (S Server) Start() error {
 		return errors.New(fmt.Sprintf("found already running instance with ID: %s", *instance.InstanceId))
 	}
 
+	// find EFS for name, and get ID to add to metadata
+	fsId, err := S.getEfsId()
+	if err != nil {
+		return errors.Wrap(err, "getting EFS ID")
+	}
+
 	fmt.Print("creating instance\n")
-	// find SG
-	// find SSM role
-	// find subnet
-	// get instance type from env
-	// find ubuntu image / get from env
 	result, err := S.Ec2Client.RunInstances(context.TODO(), &ec2.RunInstancesInput{
 		BlockDeviceMappings: nil,
 		IamInstanceProfile: &ec2Types.IamInstanceProfileSpecification{
@@ -203,7 +206,7 @@ func (S Server) Start() error {
 		ImageId:                           aws.String("ami-06d94a781b544c133"), // FIXME: get from env?
 		InstanceInitiatedShutdownBehavior: "terminate",
 		InstanceType:                      "t2.medium", // FIXME: get from env?
-		SecurityGroups:                    []string{"minecraft"},
+		SecurityGroups:                    []string{"minecraft", "minecraft-aws"},
 		MaxCount:                          aws.Int32(1),
 		MinCount:                          aws.Int32(1),
 		TagSpecifications: []ec2Types.TagSpecification{
@@ -217,7 +220,7 @@ func (S Server) Start() error {
 				},
 			},
 		},
-		UserData: aws.String(base64.StdEncoding.EncodeToString(metadata)),
+		UserData: aws.String(base64.StdEncoding.EncodeToString(bytes.Replace(metadata, []byte("FSID"), []byte(fsId), 1))),
 	})
 
 	if err != nil {
@@ -262,4 +265,17 @@ func (S Server) Start() error {
 
 	fmt.Print("creating DNS record\n")
 	return errors.Wrap(S.createOrUpdateDNSRecord(*IP), "setting DNS record")
+}
+
+func (S *Server) getEfsId() (string, error) {
+	filesystems, err := S.EfsClient.DescribeFileSystems(context.TODO(), &efs.DescribeFileSystemsInput{})
+	if err != nil {
+		return "", errors.Wrap(err, "listing EFS filesystems")
+	}
+	for _, filesystem := range filesystems.FileSystems {
+		if *filesystem.Name == S.Name {
+			return *filesystem.FileSystemId, nil
+		}
+	}
+	return "", errors.New(fmt.Sprintf("EFS Filesystem not found with name '%s'", S.Name))
 }

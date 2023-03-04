@@ -138,4 +138,5 @@ screen -d -m /start.sh
 ```
 
 ## Todo
-* create new server (EFS)
+* create new server (EFS) with efs SG attached https://docs.aws.amazon.com/efs/latest/ug/wt1-create-efs-resources.html
+* replace efs ID in metadata by found EFS ID

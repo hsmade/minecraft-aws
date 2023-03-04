@@ -108,6 +108,10 @@
          */
         if (this.wantedState !== this.setState) return 10
         if (this.server.instance_state === "NONE") return 0
+        // instance_state is pending
+        if (this.server.health_check_status === "initializing") return 60
+        if (this.server.health_check_status === "ok") return 100
+        if (this.server.health_check_status === "impaired") return -25
         if (this.server.instance_state === "pending") return 25
         if (this.server.instance_state === "running") return 50
         if (this.server.instance_state === "stopping") return -50
@@ -115,10 +119,6 @@
         if (this.server.instance_state === "stopped") return -100
         if (this.server.instance_state === "terminated") return -100
         if (this.server.desired_status === "stopped") return -50
-        // instance_state is pending
-        if (this.server.health_check_status === "initializing") return 60
-        if (this.server.health_check_status === "ok") return 100
-        if (this.server.health_check_status === "impaired") return -25
         return 0
       }
     },
