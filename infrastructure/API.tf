@@ -75,12 +75,9 @@ module "server_stop" {
   path         = "server"
   method       = "DELETE"
   iam_actions = [
-    "ecs:StopTask",
-    "ecs:ListTasks",
-    "ecs:DescribeTasks",
+    "ec2:DescribeInstances",
     "route53:ListResourceRecordSets",
     "route53:ChangeResourceRecordSets",
-    "ec2:DescribeNetworkInterfaces",
     "route53:ListResourceRecordSets",
     "route53:ChangeResourceRecordSets",
   ]
@@ -100,9 +97,7 @@ module "server_status" {
   path         = "server"
   method       = "GET"
   iam_actions = [
-    "ecs:ListTasks",
-    "ecs:DescribeTasks",
-    "ec2:DescribeNetworkInterfaces",
+    "ec2:DescribeInstances",
   ]
 }
 
