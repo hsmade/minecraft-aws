@@ -52,8 +52,12 @@ func (S Servers) ListServers() ([]*Server, error) {
 			tags[*tag.Key] = *tag.Value
 		}
 
+		if _, ok := tags["Name"]; !ok {
+			continue // this can't be ours
+		}
+
 		servers = append(servers, &Server{
-			Name:          tags["Name"], // FIXME: runtime error
+			Name:          tags["Name"],
 			DNSZoneID:     S.DNSZoneID,
 			Tags:          tags,
 			FileSystem:    fileSystem,

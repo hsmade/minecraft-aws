@@ -53,19 +53,47 @@ func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 
 	for _, reservation := range output.Reservations {
 		for _, instance := range reservation.Instances {
-			fmt.Printf("found instance %s with state %s\n", *instance.InstanceId, instance.State.Name)
+			//fmt.Printf("found instance %s with state %s\n", *instance.InstanceId, instance.State.Name)
 			if instance.State.Name == "running" || instance.State.Name == "pending" {
 				return &instance, nil
 			}
 		}
 	}
-	fmt.Println("no instances found")
+	//fmt.Println("no instances found")
 	return nil, nil
+}
+
+// getHealthState returns the latest health check status for an instance
+func (S Server) getHealthState(instanceId string) (string, error) {
+	var status *ec2.DescribeInstanceStatusOutput
+	var err error
+
+	for {
+		status, err = S.Ec2Client.DescribeInstanceStatus(context.TODO(), &ec2.DescribeInstanceStatusInput{
+			InstanceIds: []string{instanceId},
+			NextToken:   status.NextToken,
+		})
+		if err != nil {
+			return "unknown", errors.Wrap(err, "getting instance status")
+		}
+
+		// we want to loop until we reach the last entry
+		if status.NextToken == nil {
+			break
+		}
+	}
+
+	if len(status.InstanceStatuses) > 0 {
+		// return last info we have
+		return string(status.InstanceStatuses[len(status.InstanceStatuses)-1].InstanceStatus.Status), nil
+	}
+
+	return "unknown", nil
 }
 
 // Status finds a running instance and returns its info
 func (S Server) Status() (*ServerStatus, error) {
-	fmt.Printf("getting status for server with name '%s'\n", S.Name)
+	//fmt.Printf("getting status for server with name '%s'\n", S.Name)
 	instance, err := S.getRunningInstance()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting running instance")
@@ -74,25 +102,13 @@ func (S Server) Status() (*ServerStatus, error) {
 		return nil, errors.New("no running instance found")
 	}
 
+	healthCheckState, _ := S.getHealthState(*instance.InstanceId)
+
 	serverStatus := ServerStatus{
 		Name:             S.Name,
 		InstanceState:    string(instance.State.Name),
-		HealthcheckState: "unknown",
+		HealthcheckState: healthCheckState,
 		IP:               *instance.PublicIpAddress,
-	}
-
-	status, err := S.Ec2Client.DescribeInstanceStatus(context.TODO(), &ec2.DescribeInstanceStatusInput{
-		InstanceIds: []string{*instance.InstanceId},
-	})
-	if err != nil {
-		return &serverStatus, nil // no further info
-	}
-
-	if len(status.InstanceStatuses) > 0 {
-		serverStatus.HealthcheckState = string(status.InstanceStatuses[len(status.InstanceStatuses)-1].InstanceStatus.Status)
-	}
-	if status.NextToken != nil { // FIXME: follow next token
-		serverStatus.HealthcheckState = "unknown - next token"
 	}
 
 	return &serverStatus, nil
@@ -108,7 +124,7 @@ func (S Server) Stop() error {
 		return errors.New("no running instance found")
 	}
 
-	errDNS := S.deleteDNSRecord() // needs to happen first, save error for later
+	errDNS := S.deleteDNSRecord() // want to do this first, so it doesn't depend on instance termination
 
 	_, err = S.Ec2Client.TerminateInstances(context.TODO(), &ec2.TerminateInstancesInput{
 		InstanceIds: []string{*instance.InstanceId},
@@ -131,10 +147,7 @@ func (S Server) deleteDNSRecord() error {
 		return errors.Wrap(err, "listing recordsets")
 	}
 
-	if len(output.ResourceRecordSets) == 0 {
-		return nil
-	}
-	if len(output.ResourceRecordSets[0].ResourceRecords) == 0 {
+	if len(output.ResourceRecordSets) == 0 || len(output.ResourceRecordSets[0].ResourceRecords) == 0 {
 		return nil
 	}
 	return errors.Wrap(S.modifyDNSRecord(*output.ResourceRecordSets[0].ResourceRecords[0].Value, route53Types.ChangeActionDelete), "deleting DNS record")
@@ -220,57 +233,59 @@ func (S Server) Start() error {
 				},
 			},
 		},
+		// add the userdata from metadata.sh, and replace the FSID with the actual EFS FS ID
 		UserData: aws.String(base64.StdEncoding.EncodeToString(bytes.Replace(metadata, []byte("FSID"), []byte(fsId), 1))),
 	})
-
 	if err != nil {
-		fmt.Println(err)
 		return errors.Wrap(err, "creating instance")
 	}
 
-	instance = &result.Instances[0] // FIXME: possible runtime error
-	fmt.Printf("created instance with id %s\n", *instance.InstanceId)
+	IP, err := S.waitForPublicIP(*result.Instances[0].InstanceId, 10*time.Second)
+	if err != nil {
+		return errors.Wrap(err, "getting IP for DNS record")
+	}
 
+	return errors.Wrap(S.createOrUpdateDNSRecord(IP), "setting DNS record")
+}
+
+// waitForPublicIP waits until the public IP is available, and returns it
+func (S Server) waitForPublicIP(instanceId string, timeoutDuration time.Duration) (string, error) {
 	var IP *string
-	startTime := time.Now()
-	fmt.Println("waiting for IP")
+	timeout := time.Now().Add(timeoutDuration)
+
 	for {
-		if time.Now().After(startTime.Add(time.Second * 10)) {
-			fmt.Println("timeout waiting for IP")
-			return errors.New("timeout waiting for new instance")
-		}
 		time.Sleep(time.Millisecond * 250)
+		if time.Now().After(timeout) {
+			return "", errors.New("timeout waiting for new instance")
+		}
+
 		output, err := S.Ec2Client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
 			Filters: []ec2Types.Filter{
 				{
 					Name:   aws.String("instance-id"),
-					Values: []string{*instance.InstanceId},
+					Values: []string{instanceId},
 				},
 			},
 		})
 		if err != nil {
-			fmt.Printf("failed to list new instance: %v\n", err)
+			//fmt.Printf("failed to list new instance: %v\n", err)
 			continue
 		}
 
 		// find running or pending
 		for _, reservation := range output.Reservations {
 			for _, instance := range reservation.Instances {
-				fmt.Printf("instance %s with state %s\n", *instance.InstanceId, instance.State.Name)
 				if instance.State.Name == "pending" || instance.State.Name == "running" {
-					fmt.Println("found IP")
 					IP = instance.PublicIpAddress
 					break
 				}
 			}
 		}
+
 		if IP != nil {
-			break
+			return *IP, nil
 		}
 	}
-
-	fmt.Print("creating DNS record\n")
-	return errors.Wrap(S.createOrUpdateDNSRecord(*IP), "setting DNS record")
 }
 
 func (S Server) getEfsId() (string, error) {
@@ -278,6 +293,7 @@ func (S Server) getEfsId() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "listing EFS filesystems")
 	}
+
 	for _, filesystem := range filesystems.FileSystems {
 		if *filesystem.Name == S.Name {
 			return *filesystem.FileSystemId, nil

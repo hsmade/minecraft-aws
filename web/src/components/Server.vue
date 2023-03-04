@@ -2,52 +2,56 @@
   <v-container>
     <v-card
         elevation="2"
-        :loading="statusValue() > 0 && statusValue() < 100"
+        :loading="!stateStable()"
     >
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-        <v-card-title
-            v-bind="attrs"
-            v-on="on"
-        >
-          {{ server.name }}.${domain_name}
-          <v-spacer></v-spacer>
-          Status:
-          <v-progress-circular
-              v-if="statusValue() > 0 && statusValue() < 100 || statusValue() < 0"
-              :value="statusValue()>0?statusValue():statusValue() * -1"
-              :color="statusValue()===100?'green':statusValue()<0?'red':'orange'"
-          />
-          <v-icon v-if="statusValue() === 100" color="green">mdi-checkbox-marked-circle-outline</v-icon>
-          <v-icon v-if="statusValue() === 0" color="red">mdi-close-circle-outline</v-icon>
-        </v-card-title>
-        </template>
-        <span>{{ server.instance_state }} / {{ server.health_check_state }}</span>
-      </v-tooltip>
+      <v-card-title>{{ server.name }}.${domain_name}</v-card-title>
       <v-card-text>
         <v-btn
-            v-if="server.instance_state === 'NONE'"
+            v-if="startable()"
             @click="start_server()"
             color="primary"
             :loading="server.clicked"
         >Start</v-btn>
         <v-btn
-            v-if="server.instance_state !== 'NONE'"
+            v-else
             @click="stop_server()"
             color="primary"
             :loading="server.clicked"
         >Stop</v-btn>
-        <v-alert>{{ error }}</v-alert>
         <v-list>
           <v-list-item>
             <v-list-item-title>IP</v-list-item-title>
             <v-list-item-subtitle>{{server.ip}}</v-list-item-subtitle>
           </v-list-item>
-<!--          <v-list-item v-for="(value,key) in server.tags" v-bind:key="key">-->
-<!--            <v-list-item-title>{{ key }}</v-list-item-title>-->
-<!--            <v-list-item-subtitle>{{ value }}</v-list-item-subtitle>-->
-<!--          </v-list-item>-->
+          <v-list-item>
+            <v-list-item-title>Status</v-list-item-title>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on, attrs }">
+                <v-list-item-subtitle>
+                  <!-- instance state -->
+                  <v-icon v-if="this.server.instance_state==='running'" color="green">mdi-checkbox-marked-circle-outline</v-icon>
+                  <v-icon v-else-if="startable()" color="red">mdi-close-circle-outline</v-icon>
+                  <v-progress-circular
+                      v-else
+                      :color="this.server.instance_state==='shutting-down'?'red':'green'"
+                      indeterminate
+                    ></v-progress-circular>
+                  <v-spacer></v-spacer>
+                  <!-- health check state -->
+                  <v-icon v-if="this.server.health_check_state==='ok'" color="green">mdi-checkbox-marked-circle-outline</v-icon>
+                  <v-icon v-else-if="this.server.health_check_state==='NONE'" color="red">mdi-close-circle-outline</v-icon>
+                  <v-progress-circular
+                      v-else
+                      :color="this.server.health_check_state==='initializing'?'green':'red'"
+                      indeterminate
+                    ></v-progress-circular>
+                </v-list-item-subtitle>
+              </template>
+              <span>{{ server.instance_state }} / {{ server.health_check_state }}</span>
+            </v-tooltip>
+          </v-list-item>
         </v-list>
+        <v-alert>{{ error }}</v-alert>
       </v-card-text>
     </v-card>
   </v-container>
@@ -59,12 +63,12 @@
     props: ["server"],
     data: () => ({
       error: "",
-      wantedState: "",
-      setState: "",
+      // wantedState: "",
+      // setState: "",
     }),
     methods: {
       start_server() {
-        this.wantedState = "START"
+        // this.wantedState = "START"
         fetch("${server_stop}/?name="+this.server.name, { method: "PUT" })
             .then((response) => {
               if (!response.ok) {
@@ -77,7 +81,7 @@
         this.$emit('clicked', '')
       },
       stop_server() {
-        this.wantedState = "STOP"
+        // this.wantedState = "STOP"
         fetch("${server_start}/?name="+this.server.name, { method: "DELETE" })
             .then((response) => {
               if (!response.ok) {
@@ -89,7 +93,12 @@
             })
         this.$emit('clicked', '')
       },
-      statusValue() {
+      stateStable() {
+        return this.server.health_check_state === "ok" || this.server.instance_state === "terminated"
+      },
+      startable() {
+        return ['terminated', 'NONE'].includes(this.server.instance_state)
+      },
         /*
          * instance states:
          * pending
@@ -106,28 +115,13 @@
          * not-applicable
          * initializing
          */
-        if (this.wantedState !== this.setState) return 10
-        if (this.server.instance_state === "NONE") return 0
-        // instance_state is pending
-        if (this.server.health_check_state === "initializing") return 60
-        if (this.server.health_check_state === "ok") return 100
-        if (this.server.health_check_state === "impaired") return -25
-        if (this.server.instance_state === "pending") return 25
-        if (this.server.instance_state === "running") return 50
-        if (this.server.instance_state === "stopping") return -50
-        if (this.server.instance_state === "shutting-down") return -50
-        if (this.server.instance_state === "stopped") return -100
-        if (this.server.instance_state === "terminated") return -100
-        if (this.server.desired_status === "stopped") return -50
-        return 0
-      }
     },
-    async created() {
-      this.setState = this.wantedState = this.server.instance_state === "NONE"?"STOP":"START"
-    },
-    async updated() {
-      this.setState = this.server.instance_state === "NONE"?"STOP":"START"
-    },
+    // async created() {
+    //   this.setState = this.wantedState = this.server.instance_state === "NONE"?"STOP":"START"
+    // },
+    // async updated() {
+    //   this.setState = this.server.instance_state === "NONE"?"STOP":"START"
+    // },
 
   }
 </script>

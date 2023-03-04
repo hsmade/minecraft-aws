@@ -51,25 +51,7 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 func main() {
 	lambda.Start(HandleRequest)
-	//servers, err := catalog.New()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//server, err := servers.GetServer("test")
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//status, err := server.Status()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//body, err := json.Marshal(status)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//fmt.Println(string(body))
+	//HandleRequest(events.APIGatewayProxyRequest{
+	//	QueryStringParameters: map[string]string{"name": "test"},
+	//})
 }

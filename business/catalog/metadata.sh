@@ -12,8 +12,8 @@ apt-get -y install --no-install-recommends nfs-common wget tar gzip openjdk-17-j
 wget https://github.com/itzg/mc-monitor/releases/download/0.11.0/mc-monitor_0.11.0_linux_amd64.tar.gz -O - | tar xzvf - -C /usr/local/bin/
 mc-monitor  export-for-prometheus -servers localhost &
 
-file_system_id_1=FSID
-mount -t nfs4 -o vers=4.1,exec \${file_system_id_1}.efs.\$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print \$4}').amazonaws.com:/ /mnt
+file_system_id=FSID # gets replaced with the actual ID
+mount -t nfs4 -o vers=4.1,exec \${file_system_id}.efs.\$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print \$4}').amazonaws.com:/ /mnt
 cd /mnt && screen -d -m ./run.sh
 
 boot=\$(date +%s)
@@ -46,10 +46,10 @@ do
   if [ \${last_online} -eq 0 ]
   then
     (( initial_players_time = now - start ))
-    echo "[$initial_players_time]s waiting for first player(s) to come online"
+    echo "[${initial_players_time}s] waiting for first player(s) to come online"
     if [ \${initial_players_time} -gt \${initial_players_timeout} ]
     then
-      echo "waiting for initial players timed out at \${initial_players_time} seconds"
+      echo "[${initial_players_time}s] waiting for initial players timed out"
       break
     fi
     continue
@@ -58,10 +58,10 @@ do
   if [ \${player_count} -eq 0 ]
   then
     (( idle_time = now - last_online ))
-    echo "no players online for \${idle_time} seconds"
+    echo "[${idle_time}s] no players online..."
     if [ \${idle_time} -gt \${idle_time_timeout} ]
     then
-      echo "idle timeout, stopping server"
+      echo "[${idle_time}s] idle timeout, stopping server"
       break
     fi
   fi
