@@ -136,3 +136,6 @@ chmod +x /start.sh
 screen -d -m /start.sh
 
 ```
+
+## Todo
+* create new server (EFS)

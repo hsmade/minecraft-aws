@@ -14,9 +14,9 @@
           <v-spacer></v-spacer>
           Status:
           <v-progress-circular
-              v-if="statusValue() > 0 && statusValue() < 100"
-              :value="statusValue()"
-              :color="statusValue()===100?'green':statusValue()===0?'red':'orange'"
+              v-if="statusValue() > 0 && statusValue() < 100 || statusValue() < 0"
+              :value="statusValue()>0?statusValue():statusValue() * -1"
+              :color="statusValue()===100?'green':statusValue()<0?'red':'orange'"
           />
           <v-icon v-if="statusValue() === 100" color="green">mdi-checkbox-marked-circle-outline</v-icon>
           <v-icon v-if="statusValue() === 0" color="red">mdi-close-circle-outline</v-icon>
@@ -39,6 +39,10 @@
         >Stop</v-btn>
         <v-alert>{{ error }}</v-alert>
         <v-list>
+          <v-list-item>
+            <v-list-item-title>IP</v-list-item-title>
+            <v-list-item-subtitle>{{server.ip}}</v-list-item-subtitle>
+          </v-list-item>
           <v-list-item v-for="(value,key) in server.tags" v-bind:key="key">
             <v-list-item-title>{{ key }}</v-list-item-title>
             <v-list-item-subtitle>{{ value }}</v-list-item-subtitle>
@@ -106,11 +110,15 @@
         if (this.server.instance_state === "NONE") return 0
         if (this.server.instance_state === "pending") return 25
         if (this.server.instance_state === "running") return 50
-        if (this.server.desired_status === "stopped") return 50
+        if (this.server.instance_state === "stopping") return -50
+        if (this.server.instance_state === "shutting-down") return -50
+        if (this.server.instance_state === "stopped") return -100
+        if (this.server.instance_state === "terminated") return -100
+        if (this.server.desired_status === "stopped") return -50
         // instance_state is pending
-        if (this.server.health_check_status === "initializing") return 75
-        if (this.server.health_check_status === "not-applicable") return 100
+        if (this.server.health_check_status === "initializing") return 60
         if (this.server.health_check_status === "ok") return 100
+        if (this.server.health_check_status === "impaired") return -25
         return 0
       }
     },
