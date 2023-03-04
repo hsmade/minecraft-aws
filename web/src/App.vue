@@ -41,6 +41,9 @@ export default {
           .then((data) => {
             if (data) {
               this.servers = data
+              this.servers.sort((a, b) => {
+                a.name.localeCompare(b.name)
+              })
             }
           })
     }

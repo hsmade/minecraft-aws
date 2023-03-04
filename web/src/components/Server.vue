@@ -19,12 +19,12 @@
             :loading="server.clicked"
         >Stop</v-btn>
         <v-list>
-          <v-list-item v-if="server.ip!==''">
-            <v-list-item-title>IP</v-list-item-title>
+          <v-list-item>
+            <v-list-item-title><b>IP:</b></v-list-item-title>
             <v-list-item-subtitle>{{server.ip}}</v-list-item-subtitle>
           </v-list-item>
           <v-list-item>
-            <v-list-item-title>Status</v-list-item-title>
+            <v-list-item-title><b>Status:</b></v-list-item-title>
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
                 <v-list-item-subtitle v-bind="attrs" v-on="on">
