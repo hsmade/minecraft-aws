@@ -71,4 +71,37 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 func main() {
 	lambda.Start(HandleRequest)
+	//servers, err := catalog.New()
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//serverList, err := servers.ListServers()
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//var responses []Response
+	//for _, server := range serverList {
+	//	response := Response{
+	//		Name:       server.Name,
+	//		Tags:       server.Tags,
+	//		LastStatus: "NONE",
+	//	}
+	//
+	//	fmt.Printf("checking status for server '%s'\n", server.Name)
+	//	status, err := server.Status()
+	//	if err == nil {
+	//		response.LastStatus = status.InstanceState
+	//		response.IP = status.IP
+	//	}
+	//	responses = append(responses, response)
+	//}
+	//
+	//body, err := json.Marshal(responses)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//fmt.Println(string(body))
 }

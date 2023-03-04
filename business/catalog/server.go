@@ -49,7 +49,7 @@ func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 
 	for _, reservation := range output.Reservations {
 		for _, instance := range reservation.Instances {
-			fmt.Printf("found instance %s with state %s", *instance.InstanceId, instance.State.Name)
+			fmt.Printf("found instance %s with state %s\n", *instance.InstanceId, instance.State.Name)
 			if instance.State.Name == "running" {
 				return &instance, nil
 			}
@@ -60,6 +60,7 @@ func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 
 // Status finds a running instance and returns its info
 func (S Server) Status() (*ServerStatus, error) {
+	fmt.Printf("getting status for server with name '%s'\n", S.Name)
 	instance, err := S.getRunningInstance()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting running instance")
