@@ -13,7 +13,7 @@ wget https://github.com/itzg/mc-monitor/releases/download/0.11.0/mc-monitor_0.11
 mc-monitor  export-for-prometheus -servers localhost &
 
 file_system_id_1=FSID
-mount -t nfs4 -o vers=4.1 \${file_system_id_1}.efs.\$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print \$4}').amazonaws.com:/ /mnt
+mount -t nfs4 -o vers=4.1,exec \${file_system_id_1}.efs.\$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print \$4}').amazonaws.com:/ /mnt
 cd /mnt && screen -d -m ./run.sh
 
 boot=\$(date +%s)
