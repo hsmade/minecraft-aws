@@ -182,6 +182,7 @@ func (S Server) Start() error {
 		MinCount: aws.Int32(1),
 		TagSpecifications: []ec2Types.TagSpecification{
 			{
+				ResourceType: ec2Types.ResourceTypeInstance,
 				Tags: []ec2Types.Tag{
 					{
 						Key:   aws.String("Name"),
