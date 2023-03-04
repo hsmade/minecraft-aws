@@ -45,7 +45,7 @@ func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 
 	for _, reservation := range output.Reservations {
 		for _, instance := range reservation.Instances {
-			if instance.State.Name == "Running" {
+			if instance.State.Name == "running" {
 				return &instance, nil
 			}
 		}
