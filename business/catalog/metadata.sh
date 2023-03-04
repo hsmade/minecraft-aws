@@ -45,8 +45,8 @@ do
 
   if [ \${last_online} -eq 0 ]
   then
-    echo "waiting for first player(s) to come online"
     (( initial_players_time = now - start ))
+    echo "[$initial_players_time]s waiting for first player(s) to come online"
     if [ \${initial_players_time} -gt \${initial_players_timeout} ]
     then
       echo "waiting for initial players timed out at \${initial_players_time} seconds"
