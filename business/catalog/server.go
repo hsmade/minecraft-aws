@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2Types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -30,6 +31,9 @@ type ServerStatus struct {
 	IP            string
 }
 
+//go:embed metadata.sh
+var metadata string
+
 func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 	output, err := S.Ec2Client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
 		Filters: []ec2Types.Filter{
@@ -45,6 +49,7 @@ func (S Server) getRunningInstance() (*ec2Types.Instance, error) {
 
 	for _, reservation := range output.Reservations {
 		for _, instance := range reservation.Instances {
+			fmt.Printf("found instance %s with state %s", *instance.InstanceId, instance.State.Name)
 			if instance.State.Name == "running" {
 				return &instance, nil
 			}
@@ -192,7 +197,7 @@ func (S Server) Start() error {
 				},
 			},
 		},
-		UserData: nil, // FIXME: get from file
+		UserData: aws.String(metadata),
 	})
 	if err != nil {
 		return errors.Wrap(err, "creating instance")
