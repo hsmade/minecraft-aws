@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 	"minecraft-catalog/business/catalog"
 	"net/http"
 	"os"
@@ -50,5 +50,26 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 }
 
 func main() {
-	lambda.Start(HandleRequest)
+	//lambda.Start(HandleRequest)
+	servers, err := catalog.New()
+	if err != nil {
+		panic(err)
+	}
+
+	server, err := servers.GetServer("test")
+	if err != nil {
+		panic(err)
+	}
+
+	err = server.Stop()
+	if err != nil {
+		panic(err)
+	}
+
+	body, err := json.Marshal(err)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(string(body))
 }

@@ -79,6 +79,7 @@ module "server_stop" {
   method       = "DELETE"
   iam_actions = [
     "ec2:DescribeInstances",
+    "ec2:TerminateInstances",
     "route53:ListResourceRecordSets",
     "route53:ChangeResourceRecordSets",
     "route53:ListResourceRecordSets",
