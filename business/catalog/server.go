@@ -233,8 +233,10 @@ func (S Server) Start() error {
 
 	var IP *string
 	startTime := time.Now()
+	fmt.Println("waiting for IP")
 	for {
 		if time.Now().After(startTime.Add(time.Second * 30)) {
+			fmt.Println("timeout waiting for IP")
 			return errors.New("timeout waiting for new instance")
 		}
 		time.Sleep(time.Millisecond * 250)
@@ -251,17 +253,18 @@ func (S Server) Start() error {
 			continue
 		}
 
-		if len(output.Reservations) != 1 {
-			continue
+		// find running or pending
+		for _, reservation := range output.Reservations {
+			for _, instance := range reservation.Instances {
+				if instance.State.Name == "pending" || instance.State.Name == "running" {
+					IP = instance.PublicIpAddress
+					break
+				}
+			}
 		}
-		if len(output.Reservations[0].Instances) != 1 {
-			continue
+		if IP != nil {
+			break
 		}
-		if output.Reservations[0].Instances[0].PublicIpAddress == nil {
-			continue
-		}
-		IP = output.Reservations[0].Instances[0].PublicIpAddress
-		break
 	}
 
 	fmt.Print("creating DNS record\n")

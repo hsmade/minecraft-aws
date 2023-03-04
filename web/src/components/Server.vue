@@ -22,7 +22,7 @@
           <v-icon v-if="statusValue() === 0" color="red">mdi-close-circle-outline</v-icon>
         </v-card-title>
         </template>
-        <span>{{ server.ip }}</span>
+        <span>{{ server.instance_state }} / {{ server.health_check_state }}</span>
       </v-tooltip>
       <v-card-text>
         <v-btn
@@ -43,10 +43,10 @@
             <v-list-item-title>IP</v-list-item-title>
             <v-list-item-subtitle>{{server.ip}}</v-list-item-subtitle>
           </v-list-item>
-          <v-list-item v-for="(value,key) in server.tags" v-bind:key="key">
-            <v-list-item-title>{{ key }}</v-list-item-title>
-            <v-list-item-subtitle>{{ value }}</v-list-item-subtitle>
-          </v-list-item>
+<!--          <v-list-item v-for="(value,key) in server.tags" v-bind:key="key">-->
+<!--            <v-list-item-title>{{ key }}</v-list-item-title>-->
+<!--            <v-list-item-subtitle>{{ value }}</v-list-item-subtitle>-->
+<!--          </v-list-item>-->
         </v-list>
       </v-card-text>
     </v-card>
