@@ -27,9 +27,10 @@ type Server struct {
 }
 
 type ServerStatus struct {
-	Name          string
-	InstanceState string
-	IP            string
+	Name             string
+	InstanceState    string
+	HealthcheckState string
+	IP               string
 }
 
 //go:embed metadata.sh
@@ -71,12 +72,26 @@ func (S Server) Status() (*ServerStatus, error) {
 		return nil, errors.New("no running instance found")
 	}
 
+	status, err := S.Ec2Client.DescribeInstanceStatus(context.TODO(), &ec2.DescribeInstanceStatusInput{
+		Filters: []ec2Types.Filter{
+			{
+				Name:   aws.String("instance-id"),
+				Values: []string{*instance.InstanceId},
+			},
+		},
+	})
+
+	healthCheckState := status.InstanceStatuses[len(status.InstanceStatuses)-1].InstanceStatus.Status
+	if status.NextToken != nil {
+		healthCheckState = "unknown - next token"
+	}
+
 	return &ServerStatus{
-		Name:          S.Name,
-		InstanceState: string(instance.State.Name),
-		IP:            *instance.PublicIpAddress,
+		Name:             S.Name,
+		InstanceState:    string(instance.State.Name),
+		HealthcheckState: string(healthCheckState),
+		IP:               *instance.PublicIpAddress,
 	}, nil
-	// FIXME: add status check status (Initializing / ...?)
 }
 
 // Stop will terminate the running instance
@@ -212,7 +227,6 @@ func (S Server) Start() error {
 
 	var IP *string
 	startTime := time.Now()
-	// FIXME: takes too long
 	for {
 		if time.Now().After(startTime.Add(time.Second * 30)) {
 			return errors.New("timeout waiting for new instance")

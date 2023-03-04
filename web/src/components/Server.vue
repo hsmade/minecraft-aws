@@ -86,6 +86,22 @@
         this.$emit('clicked', '')
       },
       statusValue() {
+        /*
+         * instance states:
+         * pending
+         * running
+         * shutting-down
+         * terminated
+         * stopping
+         * stopped
+         *
+         * healthcheck:
+         * ok
+         * impaired
+         * insufficient-data
+         * not-applicable
+         * initializing
+         */
         if (this.wantedState !== this.setState) return 10
         if (this.server.last_status === "NONE") return 0
         if (this.server.last_status === "stopped") return 0
