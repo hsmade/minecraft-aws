@@ -2,11 +2,9 @@ package catalog
 
 import (
 	"context"
-	"fmt"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ecs"
-	ecsTypes "github.com/aws/aws-sdk-go-v2/service/ecs/types"
+	"github.com/aws/aws-sdk-go-v2/service/efs"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/pkg/errors"
 	"os"
@@ -15,9 +13,9 @@ import (
 type Servers struct {
 	Cluster       string
 	DNSZoneID     string
-	EcsClient     ecsClient
 	Route53Client route53Client
 	Ec2Client     ec2Client
+	EfsClient     efsClient
 }
 
 func New() (*Servers, error) {
@@ -25,55 +23,43 @@ func New() (*Servers, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "loading AWS config")
 	}
-	cluster := os.Getenv("CLUSTER")
-	if cluster == "" {
-		return nil, errors.New("Missing CLUSTER variable")
-	}
 
 	dnsZoneID := os.Getenv("DNS_ZONE_ID")
-	if cluster == "" {
+	if dnsZoneID == "" {
 		return nil, errors.New("Missing DNS_ZONE_ID variable")
 	}
 
 	return &Servers{
-		Cluster:       cluster,
 		DNSZoneID:     dnsZoneID,
-		EcsClient:     ecs.NewFromConfig(cfg),
 		Route53Client: route53.NewFromConfig(cfg),
 		Ec2Client:     ec2.NewFromConfig(cfg),
+		EfsClient:     efs.NewFromConfig(cfg), // efs.New(mySession, aws.NewConfig().WithRegion("us-west-2"))
 	}, nil
 }
 
-// ListServers gets the list of task definitions, and returns server instances
+// ListServers gets the list of EFS shares
 func (S Servers) ListServers() ([]*Server, error) {
-	families, err := S.EcsClient.ListTaskDefinitionFamilies(context.TODO(), &ecs.ListTaskDefinitionFamiliesInput{})
+	input := &efs.DescribeFileSystemsInput{}
+	result, err := S.EfsClient.DescribeFileSystems(context.TODO(), input)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting task definition families")
+		return nil, errors.Wrap(err, "getting EFS filesystems")
 	}
-	var servers []*Server
-	for _, name := range families.Families {
-		output, err := S.EcsClient.DescribeTaskDefinition(context.TODO(), &ecs.DescribeTaskDefinitionInput{
-			TaskDefinition: &name,
-			Include:        []ecsTypes.TaskDefinitionField{"TAGS"},
-		})
-		if err != nil {
-			fmt.Printf("could not get task definition for family '%s': %v\n", name, err)
-		}
-		fmt.Printf("task definition for family '%s': %+v\n", name, output)
 
-		tags := make(map[string]string, len(output.Tags))
-		for _, tag := range output.Tags {
+	var servers []*Server
+	for _, fileSystem := range result.FileSystems {
+		tags := make(map[string]string, len(fileSystem.Tags))
+		for _, tag := range fileSystem.Tags {
 			tags[*tag.Key] = *tag.Value
 		}
 
 		servers = append(servers, &Server{
-			Name:          name,
-			Cluster:       S.Cluster,
+			Name:          tags["Name"], // FIXME: runtime error
 			DNSZoneID:     S.DNSZoneID,
 			Tags:          tags,
-			EcsClient:     S.EcsClient,
+			FileSystem:    fileSystem,
 			Route53Client: S.Route53Client,
 			Ec2Client:     S.Ec2Client,
+			EfsClient:     S.EfsClient,
 		})
 	}
 
@@ -82,13 +68,11 @@ func (S Servers) ListServers() ([]*Server, error) {
 
 // GetServer returns a server's instance
 func (S Servers) GetServer(name string) (*Server, error) {
-	// FIXME: check if server/task family exists
 	return &Server{
 		Name:          name,
-		Cluster:       S.Cluster,
 		DNSZoneID:     S.DNSZoneID,
-		EcsClient:     S.EcsClient,
 		Route53Client: S.Route53Client,
 		Ec2Client:     S.Ec2Client,
+		EfsClient:     S.EfsClient,
 	}, nil
 }

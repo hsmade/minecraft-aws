@@ -88,10 +88,10 @@
       statusValue() {
         if (this.wantedState !== this.setState) return 10
         if (this.server.last_status === "NONE") return 0
-        if (this.server.last_status === "STOPPED") return 0
-        if (this.server.last_status === "PROVISIONING") return 25
-        if (this.server.last_status === "RUNNING") return 100
-        if (this.server.desired_status === "STOPPED") return 50
+        if (this.server.last_status === "stopped") return 0
+        if (this.server.last_status === "pending") return 25
+        if (this.server.last_status === "running") return 100
+        if (this.server.desired_status === "stopped") return 50
         // last_status is pending
         if (this.server.health_status === "UNKNOWN") return 50
         if (this.server.health_status === "HEALTHY") return 75

@@ -2,6 +2,9 @@ data "external" "git_checkout" {
   program = ["${path.module}/get_sha.sh"]
 }
 
+data "aws_region" "default" {}
+data "aws_caller_identity" "current" {}
+
 resource "aws_api_gateway_deployment" "deployment" {
   rest_api_id = aws_api_gateway_rest_api.minecraft.id
   triggers = {
@@ -44,23 +47,20 @@ module "server_start" {
   account_id   = data.aws_caller_identity.current.account_id
   resource_id  = aws_api_gateway_resource.server.id
   rest_api_id  = aws_api_gateway_rest_api.minecraft.id
-  cluster_name = aws_ecs_cluster.minecraft.name
   dns_zone_id  = aws_route53_zone.domain.id
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
-  ecs_sg_id    = aws_security_group.ecs.id  # used for ECS tasks
   name         = "server_start"
   path         = "server"
   method       = "PUT"
   iam_actions = [
-    "ecs:RunTask",
-    "iam:PassRole", # FIXME: for role/ecs_execution_role
-    "ecs:ListTasks",
-    "ecs:DescribeTasks",
-    "ec2:DescribeNetworkInterfaces",
+    "ec2:DescribeInstances",
+    "ec2:RunInstances",
     "route53:ListResourceRecordSets",
     "route53:ChangeResourceRecordSets",
+    "iam:PassRole", // "arn:aws:iam::647334721350:role/ssm"
+    "ec2:CreateTags", // "arn:aws:ec2:eu-west-1:647334721350:instance/*"
   ]
 }
 
@@ -70,7 +70,6 @@ module "server_stop" {
   account_id   = data.aws_caller_identity.current.account_id
   resource_id  = aws_api_gateway_resource.server.id
   rest_api_id  = aws_api_gateway_rest_api.minecraft.id
-  cluster_name = aws_ecs_cluster.minecraft.name
   dns_zone_id  = aws_route53_zone.domain.id
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
@@ -78,14 +77,11 @@ module "server_stop" {
   name         = "server_stop"
   path         = "server"
   method       = "DELETE"
-  ecs_sg_id    = aws_security_group.ecs.id
   iam_actions = [
-    "ecs:StopTask",
-    "ecs:ListTasks",
-    "ecs:DescribeTasks",
+    "ec2:DescribeInstances",
+    "ec2:TerminateInstances",
     "route53:ListResourceRecordSets",
     "route53:ChangeResourceRecordSets",
-    "ec2:DescribeNetworkInterfaces",
     "route53:ListResourceRecordSets",
     "route53:ChangeResourceRecordSets",
   ]
@@ -97,19 +93,15 @@ module "server_status" {
   account_id   = data.aws_caller_identity.current.account_id
   resource_id  = aws_api_gateway_resource.server.id
   rest_api_id  = aws_api_gateway_rest_api.minecraft.id
-  cluster_name = aws_ecs_cluster.minecraft.name
   dns_zone_id  = aws_route53_zone.domain.id
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
-  ecs_sg_id    = aws_security_group.ecs.id
   name         = "server_status"
   path         = "server"
   method       = "GET"
   iam_actions = [
-    "ecs:ListTasks",
-    "ecs:DescribeTasks",
-    "ec2:DescribeNetworkInterfaces",
+    "ec2:DescribeInstances",
   ]
 }
 
@@ -125,20 +117,15 @@ module "servers_list" {
   account_id   = data.aws_caller_identity.current.account_id
   resource_id  = aws_api_gateway_resource.servers.id
   rest_api_id  = aws_api_gateway_rest_api.minecraft.id
-  cluster_name = aws_ecs_cluster.minecraft.name
   dns_zone_id  = aws_route53_zone.domain.id
   dns_zone     = aws_route53_zone.domain.name
   subnets      = data.aws_subnets.subnets.ids
   cors_domain  = aws_s3_bucket.site_bucket.bucket_domain_name
-  ecs_sg_id    = aws_security_group.ecs.id
   name         = "servers_list"
   path         = "servers"
   method       = "GET"
   iam_actions = [
-    "ecs:ListTaskDefinitionFamilies",
-    "ecs:DescribeTaskDefinition",
-    "ecs:ListTasks",
-    "ecs:DescribeTasks",
-    "ec2:DescribeNetworkInterfaces",
+    "elasticfilesystem:DescribeFileSystems",
+    "ec2:DescribeInstances",
   ]
 }
