@@ -8,7 +8,7 @@ initial_players_timeout=900
 idle_time_timeout=900
 
 apt update
-apt-get -y install --no-install-recommends nfs-common wget tar gzip openjdk-19-jre-headless screen
+apt-get -y install --no-install-recommends nfs-common wget tar gzip openjdk-17-jre-headless screen
 wget https://github.com/itzg/mc-monitor/releases/download/0.11.0/mc-monitor_0.11.0_linux_amd64.tar.gz -O - | tar xzvf - -C /usr/local/bin/
 mc-monitor  export-for-prometheus -servers localhost &
 
