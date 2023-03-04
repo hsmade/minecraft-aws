@@ -27,7 +27,7 @@
             <v-list-item-title>Status</v-list-item-title>
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
-                <v-list-item-subtitle>
+                <v-list-item-subtitle v-bind="attrs" v-on="on">
                   <!-- instance state -->
                   <v-icon v-if="this.server.instance_state==='running'" color="green">mdi-checkbox-marked-circle-outline</v-icon>
                   <v-icon v-else-if="startable()" color="red">mdi-close-circle-outline</v-icon>
