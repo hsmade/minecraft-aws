@@ -61,6 +61,7 @@ module "server_start" {
     "route53:ChangeResourceRecordSets",
     "iam:PassRole", // "arn:aws:iam::647334721350:role/ssm"
     "ec2:CreateTags", // "arn:aws:ec2:eu-west-1:647334721350:instance/*"
+    "elasticfilesystem:DescribeFileSystems",
   ]
 }
 

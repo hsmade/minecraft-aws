@@ -267,7 +267,7 @@ func (S Server) Start() error {
 	return errors.Wrap(S.createOrUpdateDNSRecord(*IP), "setting DNS record")
 }
 
-func (S *Server) getEfsId() (string, error) {
+func (S Server) getEfsId() (string, error) {
 	filesystems, err := S.EfsClient.DescribeFileSystems(context.TODO(), &efs.DescribeFileSystemsInput{})
 	if err != nil {
 		return "", errors.Wrap(err, "listing EFS filesystems")
