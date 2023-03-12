@@ -50,7 +50,7 @@
             </v-tooltip>
           </v-list-item>
         </v-list>
-        <v-alert v-if="error !== ''" color="red">Error: {{ error }}</v-alert>
+        <v-alert v-if="error" color="red">Error: {{ error }}</v-alert>
       </v-card-text>
     </v-card>
   </v-container>
