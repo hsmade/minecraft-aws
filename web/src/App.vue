@@ -5,7 +5,7 @@
         <v-alert v-if="error" color="red">Error: {{ error }}</v-alert>
         <v-row>
           <v-col v-for="(server, index) in servers" v-bind:key="index">
-            <ServerComponent :server="server" @clicked="() => {servers[index].clicked = true; updateData();}"/>
+            <ServerComponent :server="server" @clicked="() => {servers[index].clicked = true}"/>
           </v-col>
         </v-row>
       </v-container>
