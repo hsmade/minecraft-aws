@@ -28,6 +28,7 @@ resource "aws_route53_zone" "domain" {
   name = var.domain_name
 }
 
+# doesn't seem to work properly
 #resource "aws_route53_record" "soa" {
 #  zone_id         = aws_route53_zone.domain.id
 #  name            = var.domain_name
@@ -82,7 +83,7 @@ resource "aws_security_group" "efs" {
   name = "minecraft-efs"
 }
 
-# allow ecs to connect to efs
+# allow instance to connect to efs
 resource "aws_security_group_rule" "nfs" {
   from_port         = 2049
   protocol          = "TCP"
@@ -96,11 +97,12 @@ resource "aws_security_group_rule" "nfs" {
 #  assume_role_policy = ""
 #}
 #
+
 #resource "aws_backup_plan" "efs" {
 #  name = "minecraft EFS daily backup"
 #  rule {
 #    rule_name         = "minecraft_efs_daily_backup"
-#    target_vault_name = "minecraft"
+#    target_vault_name = aws_backup_vault.minecraft.name
 #    schedule = "cront(0 0 * * ? *)"
 #
 #    lifecycle {
@@ -113,6 +115,11 @@ resource "aws_security_group_rule" "nfs" {
 #    backup_options = {}
 #  }
 #}
+#
+#resource "aws_backup_vault" "minecraft" {
+#  name = "minecraft"
+#}
+
 # FIXME: missing
 # iam role for ssm + efs
 # backup policy for EFS

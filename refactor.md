@@ -139,3 +139,4 @@ screen -d -m /start.sh
 
 ## Todo
 * create new server (EFS) with efs SG attached https://docs.aws.amazon.com/efs/latest/ug/wt1-create-efs-resources.html
+* add instance type as tag to EFS?

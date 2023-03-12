@@ -50,7 +50,7 @@
             </v-tooltip>
           </v-list-item>
         </v-list>
-        <v-alert>{{ error }}</v-alert>
+        <v-alert v-if="error !== ''" color="red">Error: {{ error }}</v-alert>
       </v-card-text>
     </v-card>
   </v-container>
@@ -68,6 +68,7 @@
     methods: {
       start_server() {
         // this.wantedState = "START"
+        this.$emit('clicked', '')
         fetch("${server_stop}/?name="+this.server.name, { method: "PUT" })
             .then((response) => {
               if (!response.ok) {
@@ -77,10 +78,10 @@
             .then((text) => {
               this.error = text
             })
-        this.$emit('clicked', '')
       },
       stop_server() {
         // this.wantedState = "STOP"
+        this.$emit('clicked', '')
         fetch("${server_start}/?name="+this.server.name, { method: "DELETE" })
             .then((response) => {
               if (!response.ok) {
@@ -90,7 +91,6 @@
             .then((text) => {
               this.error = text
             })
-        this.$emit('clicked', '')
       },
       stateStable() {
         return this.server.health_check_state === "ok" || ['NONE', 'terminated', 'running'].includes(this.server.instance_state)
