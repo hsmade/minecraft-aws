@@ -15,6 +15,6 @@ infrastructure:
 infrastructure/site:
 	cd web && \
 	npm install && \
-	npm run build && \
+	npm run buildDev && \
 	mv dist ../infrastructure/site
 	for file in infrastructure/site/js/app*js; do mv -v "$${file}" "$${file}.tmpl"; done
