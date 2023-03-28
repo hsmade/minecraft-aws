@@ -210,7 +210,7 @@ func (S Server) Start() error {
 		return errors.Wrap(err, "getting EFS ID")
 	}
 
-	fmt.Print("creating instance\n")
+	fmt.Println("creating instance")
 	result, err := S.Ec2Client.RunInstances(context.TODO(), &ec2.RunInstancesInput{
 		BlockDeviceMappings: nil,
 		IamInstanceProfile: &ec2Types.IamInstanceProfileSpecification{
@@ -240,11 +240,13 @@ func (S Server) Start() error {
 		return errors.Wrap(err, "creating instance")
 	}
 
-	IP, err := S.waitForPublicIP(*result.Instances[0].InstanceId, 10*time.Second)
+	fmt.Println("waiting for IP")
+	IP, err := S.waitForPublicIP(*result.Instances[0].InstanceId, 30*time.Second)
 	if err != nil {
 		return errors.Wrap(err, "getting IP for DNS record")
 	}
 
+	fmt.Printf("Updating DNS with ip %s\n", IP)
 	return errors.Wrap(S.createOrUpdateDNSRecord(IP), "setting DNS record")
 }
 
