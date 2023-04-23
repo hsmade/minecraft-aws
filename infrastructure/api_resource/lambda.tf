@@ -43,7 +43,7 @@ resource "aws_lambda_function" "function" {
   function_name = var.name
   role          = aws_iam_role.iam_role.arn
   image_uri     = "${aws_ecr_repository.repository.repository_url}@${data.aws_ecr_image.image.id}"
-  timeout       = "60"
+  timeout       = "90"
   package_type  = "Image"
   environment {
     variables = {

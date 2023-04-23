@@ -31,11 +31,13 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 	fmt.Print("starting server\n")
 	err = server.Start()
 	if err != nil {
+		fmt.Errorf("failed starting server: %w", err)
 		return wrapError(http.StatusInternalServerError, err)
 	}
 
 	body, err := json.Marshal(err)
 	if err != nil {
+		fmt.Errorf("failed creating body from error: %w", err)
 		return wrapError(http.StatusInternalServerError, err)
 	}
 

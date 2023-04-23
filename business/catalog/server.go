@@ -241,7 +241,7 @@ func (S Server) Start() error {
 	}
 
 	fmt.Println("waiting for IP")
-	IP, err := S.waitForPublicIP(*result.Instances[0].InstanceId, 30*time.Second)
+	IP, err := S.waitForPublicIP(*result.Instances[0].InstanceId, 60*time.Second)
 	if err != nil {
 		return errors.Wrap(err, "getting IP for DNS record")
 	}
@@ -256,7 +256,7 @@ func (S Server) waitForPublicIP(instanceId string, timeoutDuration time.Duration
 	timeout := time.Now().Add(timeoutDuration)
 
 	for {
-		time.Sleep(time.Millisecond * 250)
+		time.Sleep(time.Second * 1)
 		if time.Now().After(timeout) {
 			return "", errors.New("timeout waiting for new instance")
 		}
