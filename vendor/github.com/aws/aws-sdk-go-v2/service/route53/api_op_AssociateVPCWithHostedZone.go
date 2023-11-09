@@ -4,36 +4,35 @@ package route53
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Associates an Amazon VPC with a private hosted zone. To perform the association,
-// the VPC and the private hosted zone must already exist. You can't convert a
-// public hosted zone into a private hosted zone. If you want to associate a VPC
-// that was created by using one Amazon Web Services account with a private hosted
-// zone that was created by using a different account, the Amazon Web Services
-// account that created the private hosted zone must first submit a
+// Associates an Amazon VPC with a private hosted zone. To perform the
+// association, the VPC and the private hosted zone must already exist. You can't
+// convert a public hosted zone into a private hosted zone. If you want to
+// associate a VPC that was created by using one Amazon Web Services account with a
+// private hosted zone that was created by using a different account, the Amazon
+// Web Services account that created the private hosted zone must first submit a
 // CreateVPCAssociationAuthorization request. Then the account that created the VPC
 // must submit an AssociateVPCWithHostedZone request. When granting access, the
 // hosted zone and the Amazon VPC must belong to the same partition. A partition is
 // a group of Amazon Web Services Regions. Each Amazon Web Services account is
 // scoped to one partition. The following are the supported partitions:
+//   - aws - Amazon Web Services Regions
+//   - aws-cn - China Regions
+//   - aws-us-gov - Amazon Web Services GovCloud (US) Region
 //
-// * aws -
-// Amazon Web Services Regions
-//
-// * aws-cn - China Regions
-//
-// * aws-us-gov - Amazon Web
-// Services GovCloud (US) Region
-//
-// For more information, see Access Management
-// (https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) in
-// the Amazon Web Services General Reference.
+// For more information, see Access Management (https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html)
+// in the Amazon Web Services General Reference.
 func (c *Client) AssociateVPCWithHostedZone(ctx context.Context, params *AssociateVPCWithHostedZoneInput, optFns ...func(*Options)) (*AssociateVPCWithHostedZoneOutput, error) {
 	if params == nil {
 		params = &AssociateVPCWithHostedZoneInput{}
@@ -53,9 +52,9 @@ func (c *Client) AssociateVPCWithHostedZone(ctx context.Context, params *Associa
 // with a private hosted zone.
 type AssociateVPCWithHostedZoneInput struct {
 
-	// The ID of the private hosted zone that you want to associate an Amazon VPC with.
-	// Note that you can't associate a VPC with a hosted zone that doesn't have an
-	// existing VPC association.
+	// The ID of the private hosted zone that you want to associate an Amazon VPC
+	// with. Note that you can't associate a VPC with a hosted zone that doesn't have
+	// an existing VPC association.
 	//
 	// This member is required.
 	HostedZoneId *string
@@ -96,6 +95,9 @@ func (c *Client) addOperationAssociateVPCWithHostedZoneMiddlewares(stack *middle
 	if err != nil {
 		return err
 	}
+	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
+		return err
+	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
 		return err
 	}
@@ -123,7 +125,7 @@ func (c *Client) addOperationAssociateVPCWithHostedZoneMiddlewares(stack *middle
 	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = addClientUserAgent(stack); err != nil {
+	if err = addClientUserAgent(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
@@ -132,10 +134,16 @@ func (c *Client) addOperationAssociateVPCWithHostedZoneMiddlewares(stack *middle
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
+	if err = addAssociateVPCWithHostedZoneResolveEndpointMiddleware(stack, options); err != nil {
+		return err
+	}
 	if err = addOpAssociateVPCWithHostedZoneValidationMiddleware(stack); err != nil {
 		return err
 	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opAssociateVPCWithHostedZone(options.Region), middleware.Before); err != nil {
+		return err
+	}
+	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -150,6 +158,9 @@ func (c *Client) addOperationAssociateVPCWithHostedZoneMiddlewares(stack *middle
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
+	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -160,4 +171,127 @@ func newServiceMetadataMiddleware_opAssociateVPCWithHostedZone(region string) *a
 		SigningName:   "route53",
 		OperationName: "AssociateVPCWithHostedZone",
 	}
+}
+
+type opAssociateVPCWithHostedZoneResolveEndpointMiddleware struct {
+	EndpointResolver EndpointResolverV2
+	BuiltInResolver  builtInParameterResolver
+}
+
+func (*opAssociateVPCWithHostedZoneResolveEndpointMiddleware) ID() string {
+	return "ResolveEndpointV2"
+}
+
+func (m *opAssociateVPCWithHostedZoneResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
+	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
+) {
+	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
+		return next.HandleSerialize(ctx, in)
+	}
+
+	req, ok := in.Request.(*smithyhttp.Request)
+	if !ok {
+		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
+	}
+
+	if m.EndpointResolver == nil {
+		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
+	}
+
+	params := EndpointParameters{}
+
+	m.BuiltInResolver.ResolveBuiltIns(&params)
+
+	var resolvedEndpoint smithyendpoints.Endpoint
+	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
+	if err != nil {
+		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
+	}
+
+	req.URL = &resolvedEndpoint.URI
+
+	for k := range resolvedEndpoint.Headers {
+		req.Header.Set(
+			k,
+			resolvedEndpoint.Headers.Get(k),
+		)
+	}
+
+	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
+	if err != nil {
+		var nfe *internalauth.NoAuthenticationSchemesFoundError
+		if errors.As(err, &nfe) {
+			// if no auth scheme is found, default to sigv4
+			signingName := "route53"
+			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+
+		}
+		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
+		if errors.As(err, &ue) {
+			return out, metadata, fmt.Errorf(
+				"This operation requests signer version(s) %v but the client only supports %v",
+				ue.UnsupportedSchemes,
+				internalauth.SupportedSchemes,
+			)
+		}
+	}
+
+	for _, authScheme := range authSchemes {
+		switch authScheme.(type) {
+		case *internalauth.AuthenticationSchemeV4:
+			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
+			var signingName, signingRegion string
+			if v4Scheme.SigningName == nil {
+				signingName = "route53"
+			} else {
+				signingName = *v4Scheme.SigningName
+			}
+			if v4Scheme.SigningRegion == nil {
+				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
+			} else {
+				signingRegion = *v4Scheme.SigningRegion
+			}
+			if v4Scheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+			break
+		case *internalauth.AuthenticationSchemeV4A:
+			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
+			if v4aScheme.SigningName == nil {
+				v4aScheme.SigningName = aws.String("route53")
+			}
+			if v4aScheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
+			break
+		case *internalauth.AuthenticationSchemeNone:
+			break
+		}
+	}
+
+	return next.HandleSerialize(ctx, in)
+}
+
+func addAssociateVPCWithHostedZoneResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
+	return stack.Serialize.Insert(&opAssociateVPCWithHostedZoneResolveEndpointMiddleware{
+		EndpointResolver: options.EndpointResolverV2,
+		BuiltInResolver: &builtInResolver{
+			Region:       options.Region,
+			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
+			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
+			Endpoint:     options.BaseEndpoint,
+		},
+	}, "ResolveEndpoint", middleware.After)
 }

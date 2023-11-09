@@ -1,3 +1,148 @@
+# v1.34.1 (2023-11-09)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.34.0 (2023-11-06)
+
+* **Feature**: Add partitional endpoints for iso-e and iso-f.
+
+# v1.33.0 (2023-11-01)
+
+* **Feature**: Adds support for configured endpoints via environment variables and the AWS shared configuration file.
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.32.0 (2023-10-31)
+
+* **Feature**: **BREAKING CHANGE**: Bump minimum go version to 1.19 per the revised [go version support policy](https://aws.amazon.com/blogs/developer/aws-sdk-for-go-aligns-with-go-release-policy-on-supported-runtimes/).
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.31.0 (2023-10-24)
+
+* **Feature**: **BREAKFIX**: Correct nullability and default value representation of various input fields across a large number of services. Calling code that references one or more of the affected fields will need to update usage accordingly. See [2162](https://github.com/aws/aws-sdk-go-v2/issues/2162).
+
+# v1.30.2 (2023-10-12)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.30.1 (2023-10-06)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.30.0 (2023-10-05)
+
+* **Feature**: Add hostedzonetype filter to ListHostedZones API.
+
+# v1.29.5 (2023-08-21)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.4 (2023-08-18)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.3 (2023-08-17)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.2 (2023-08-07)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.29.1 (2023-08-01)
+
+* No change notes available for this release.
+
+# v1.29.0 (2023-07-31)
+
+* **Feature**: Adds support for smithy-modeled endpoint resolution. A new rules-based endpoint resolution will be added to the SDK which will supercede and deprecate existing endpoint resolution. Specifically, EndpointResolver will be deprecated while BaseEndpoint and EndpointResolverV2 will take its place. For more information, please see the Endpoints section in our Developer Guide.
+* **Feature**: Amazon Route 53 now supports the Israel (Tel Aviv) Region (il-central-1) for latency records, geoproximity records, and private DNS for Amazon VPCs in that region.
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.28.6 (2023-07-28)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.28.5 (2023-07-26)
+
+* **Documentation**: Update that corrects the documents for received feedback.
+
+# v1.28.4 (2023-07-13)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.28.3 (2023-06-15)
+
+* No change notes available for this release.
+
+# v1.28.2 (2023-06-13)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.28.1 (2023-05-04)
+
+* No change notes available for this release.
+
+# v1.28.0 (2023-04-24)
+
+* **Feature**: added paginator for listResourceRecordSets
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.27.7 (2023-04-10)
+
+* No change notes available for this release.
+
+# v1.27.6 (2023-04-07)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.27.5 (2023-03-21)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.27.4 (2023-03-10)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.27.3 (2023-02-22)
+
+* **Bug Fix**: Prevent nil pointer dereference when retrieving error codes.
+
+# v1.27.2 (2023-02-20)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.27.1 (2023-02-03)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.27.0 (2023-01-24)
+
+* **Feature**: Amazon Route 53 now supports the Asia Pacific (Melbourne) Region (ap-southeast-4) for latency records, geoproximity records, and private DNS for Amazon VPCs in that region.
+
+# v1.26.0 (2023-01-05)
+
+* **Feature**: Add `ErrorCodeOverride` field to all error structs (aws/smithy-go#401).
+
+# v1.25.2 (2022-12-15)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.25.1 (2022-12-02)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.25.0 (2022-11-21)
+
+* **Feature**: Amazon Route 53 now supports the Asia Pacific (Hyderabad) Region (ap-south-2) for latency records, geoproximity records, and private DNS for Amazon VPCs in that region.
+
+# v1.24.0 (2022-11-15)
+
+* **Feature**: Amazon Route 53 now supports the Europe (Spain) Region (eu-south-2) for latency records, geoproximity records, and private DNS for Amazon VPCs in that region.
+
+# v1.23.0 (2022-11-08)
+
+* **Feature**: Amazon Route 53 now supports the Europe (Zurich) Region (eu-central-2) for latency records, geoproximity records, and private DNS for Amazon VPCs in that region.
+
 # v1.22.4 (2022-10-24)
 
 * **Dependency Update**: Updated to the latest SDK module versions
