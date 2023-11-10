@@ -4,10 +4,14 @@ package ec2
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithytime "github.com/aws/smithy-go/time"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
@@ -16,9 +20,8 @@ import (
 	"time"
 )
 
-// Describes one or more of your subnets. For more information, see Your VPC and
-// subnets (https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html) in
-// the Amazon Virtual Private Cloud User Guide.
+// Describes one or more of your subnets. For more information, see Subnets (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html)
+// in the Amazon VPC User Guide.
 func (c *Client) DescribeSubnets(ctx context.Context, params *DescribeSubnetsInput, optFns ...func(*Options)) (*DescribeSubnetsOutput, error) {
 	if params == nil {
 		params = &DescribeSubnetsInput{}
@@ -38,115 +41,80 @@ type DescribeSubnetsInput struct {
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
-	// required permissions, the error response is DryRunOperation. Otherwise, it is
-	// UnauthorizedOperation.
+	// required permissions, the error response is DryRunOperation . Otherwise, it is
+	// UnauthorizedOperation .
 	DryRun *bool
 
-	// One or more filters.
-	//
-	// * availability-zone - The Availability Zone for the
-	// subnet. You can also use availabilityZone as the filter name.
-	//
-	// *
-	// availability-zone-id - The ID of the Availability Zone for the subnet. You can
-	// also use availabilityZoneId as the filter name.
-	//
-	// * available-ip-address-count -
-	// The number of IPv4 addresses in the subnet that are available.
-	//
-	// * cidr-block -
-	// The IPv4 CIDR block of the subnet. The CIDR block you specify must exactly match
-	// the subnet's CIDR block for information to be returned for the subnet. You can
-	// also use cidr or cidrBlock as the filter names.
-	//
-	// * customer-owned-ipv4-pool -
-	// The customer-owned IPv4 address pool associated with the subnet.
-	//
-	// *
-	// default-for-az - Indicates whether this is the default subnet for the
-	// Availability Zone (true | false). You can also use defaultForAz as the filter
-	// name.
-	//
-	// * enable-dns64 - Indicates whether DNS queries made to the
-	// Amazon-provided DNS Resolver in this subnet should return synthetic IPv6
-	// addresses for IPv4-only destinations.
-	//
-	// * enable-lni-at-device-index - Indicates
-	// the device position for local network interfaces in this subnet. For example, 1
-	// indicates local network interfaces in this subnet are the secondary network
-	// interface (eth1).
-	//
-	// * ipv6-cidr-block-association.ipv6-cidr-block - An IPv6 CIDR
-	// block associated with the subnet.
-	//
-	// * ipv6-cidr-block-association.association-id
-	// - An association ID for an IPv6 CIDR block associated with the subnet.
-	//
-	// *
-	// ipv6-cidr-block-association.state - The state of an IPv6 CIDR block associated
-	// with the subnet.
-	//
-	// * ipv6-native - Indicates whether this is an IPv6 only subnet
-	// (true | false).
-	//
-	// * map-customer-owned-ip-on-launch - Indicates whether a network
-	// interface created in this subnet (including a network interface created by
-	// RunInstances) receives a customer-owned IPv4 address.
-	//
-	// * map-public-ip-on-launch
-	// - Indicates whether instances launched in this subnet receive a public IPv4
-	// address.
-	//
-	// * outpost-arn - The Amazon Resource Name (ARN) of the Outpost.
-	//
-	// *
-	// owner-id - The ID of the Amazon Web Services account that owns the subnet.
-	//
-	// *
-	// private-dns-name-options-on-launch.hostname-type - The type of hostname to
-	// assign to instances in the subnet at launch. For IPv4-only and dual-stack (IPv4
-	// and IPv6) subnets, an instance DNS name can be based on the instance IPv4
-	// address (ip-name) or the instance ID (resource-name). For IPv6 only subnets, an
-	// instance DNS name must be based on the instance ID (resource-name).
-	//
-	// *
-	// private-dns-name-options-on-launch.enable-resource-name-dns-a-record - Indicates
-	// whether to respond to DNS queries for instance hostnames with DNS A records.
-	//
-	// *
-	// private-dns-name-options-on-launch.enable-resource-name-dns-aaaa-record -
-	// Indicates whether to respond to DNS queries for instance hostnames with DNS AAAA
-	// records.
-	//
-	// * state - The state of the subnet (pending | available).
-	//
-	// * subnet-arn
-	// - The Amazon Resource Name (ARN) of the subnet.
-	//
-	// * subnet-id - The ID of the
-	// subnet.
-	//
-	// * tag: - The key/value combination of a tag assigned to the resource.
-	// Use the tag key in the filter name and the tag value as the filter value. For
-	// example, to find all resources that have a tag with the key Owner and the value
-	// TeamA, specify tag:Owner for the filter name and TeamA for the filter value.
-	//
-	// *
-	// tag-key - The key of a tag assigned to the resource. Use this filter to find all
-	// resources assigned a tag with a specific key, regardless of the tag value.
-	//
-	// *
-	// vpc-id - The ID of the VPC for the subnet.
+	// The filters.
+	//   - availability-zone - The Availability Zone for the subnet. You can also use
+	//   availabilityZone as the filter name.
+	//   - availability-zone-id - The ID of the Availability Zone for the subnet. You
+	//   can also use availabilityZoneId as the filter name.
+	//   - available-ip-address-count - The number of IPv4 addresses in the subnet that
+	//   are available.
+	//   - cidr-block - The IPv4 CIDR block of the subnet. The CIDR block you specify
+	//   must exactly match the subnet's CIDR block for information to be returned for
+	//   the subnet. You can also use cidr or cidrBlock as the filter names.
+	//   - customer-owned-ipv4-pool - The customer-owned IPv4 address pool associated
+	//   with the subnet.
+	//   - default-for-az - Indicates whether this is the default subnet for the
+	//   Availability Zone ( true | false ). You can also use defaultForAz as the
+	//   filter name.
+	//   - enable-dns64 - Indicates whether DNS queries made to the Amazon-provided DNS
+	//   Resolver in this subnet should return synthetic IPv6 addresses for IPv4-only
+	//   destinations.
+	//   - enable-lni-at-device-index - Indicates the device position for local network
+	//   interfaces in this subnet. For example, 1 indicates local network interfaces
+	//   in this subnet are the secondary network interface (eth1).
+	//   - ipv6-cidr-block-association.ipv6-cidr-block - An IPv6 CIDR block associated
+	//   with the subnet.
+	//   - ipv6-cidr-block-association.association-id - An association ID for an IPv6
+	//   CIDR block associated with the subnet.
+	//   - ipv6-cidr-block-association.state - The state of an IPv6 CIDR block
+	//   associated with the subnet.
+	//   - ipv6-native - Indicates whether this is an IPv6 only subnet ( true | false
+	//   ).
+	//   - map-customer-owned-ip-on-launch - Indicates whether a network interface
+	//   created in this subnet (including a network interface created by RunInstances
+	//   ) receives a customer-owned IPv4 address.
+	//   - map-public-ip-on-launch - Indicates whether instances launched in this
+	//   subnet receive a public IPv4 address.
+	//   - outpost-arn - The Amazon Resource Name (ARN) of the Outpost.
+	//   - owner-id - The ID of the Amazon Web Services account that owns the subnet.
+	//   - private-dns-name-options-on-launch.hostname-type - The type of hostname to
+	//   assign to instances in the subnet at launch. For IPv4-only and dual-stack (IPv4
+	//   and IPv6) subnets, an instance DNS name can be based on the instance IPv4
+	//   address (ip-name) or the instance ID (resource-name). For IPv6 only subnets, an
+	//   instance DNS name must be based on the instance ID (resource-name).
+	//   - private-dns-name-options-on-launch.enable-resource-name-dns-a-record -
+	//   Indicates whether to respond to DNS queries for instance hostnames with DNS A
+	//   records.
+	//   - private-dns-name-options-on-launch.enable-resource-name-dns-aaaa-record -
+	//   Indicates whether to respond to DNS queries for instance hostnames with DNS AAAA
+	//   records.
+	//   - state - The state of the subnet ( pending | available ).
+	//   - subnet-arn - The Amazon Resource Name (ARN) of the subnet.
+	//   - subnet-id - The ID of the subnet.
+	//   - tag : - The key/value combination of a tag assigned to the resource. Use the
+	//   tag key in the filter name and the tag value as the filter value. For example,
+	//   to find all resources that have a tag with the key Owner and the value TeamA ,
+	//   specify tag:Owner for the filter name and TeamA for the filter value.
+	//   - tag-key - The key of a tag assigned to the resource. Use this filter to find
+	//   all resources assigned a tag with a specific key, regardless of the tag value.
+	//   - vpc-id - The ID of the VPC for the subnet.
 	Filters []types.Filter
 
-	// The maximum number of results to return with a single call. To retrieve the
-	// remaining results, make another call with the returned nextToken value.
+	// The maximum number of items to return for this request. To get the next page of
+	// items, make another request with the token returned in the output. For more
+	// information, see Pagination (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Query-Requests.html#api-pagination)
+	// .
 	MaxResults *int32
 
-	// The token for the next page of results.
+	// The token returned from a previous paginated request. Pagination continues from
+	// the end of the items returned by the previous request.
 	NextToken *string
 
-	// One or more subnet IDs. Default: Describes all your subnets.
+	// The IDs of the subnets. Default: Describes all your subnets.
 	SubnetIds []string
 
 	noSmithyDocumentSerde
@@ -154,8 +122,8 @@ type DescribeSubnetsInput struct {
 
 type DescribeSubnetsOutput struct {
 
-	// The token to use to retrieve the next page of results. This value is null when
-	// there are no more results to return.
+	// The token to include in another request to get the next page of items. This
+	// value is null when there are no more items to return.
 	NextToken *string
 
 	// Information about one or more subnets.
@@ -174,6 +142,9 @@ func (c *Client) addOperationDescribeSubnetsMiddlewares(stack *middleware.Stack,
 	}
 	err = stack.Deserialize.Add(&awsEc2query_deserializeOpDescribeSubnets{}, middleware.After)
 	if err != nil {
+		return err
+	}
+	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
@@ -203,7 +174,7 @@ func (c *Client) addOperationDescribeSubnetsMiddlewares(stack *middleware.Stack,
 	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = addClientUserAgent(stack); err != nil {
+	if err = addClientUserAgent(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
@@ -212,7 +183,13 @@ func (c *Client) addOperationDescribeSubnetsMiddlewares(stack *middleware.Stack,
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
+	if err = addDescribeSubnetsResolveEndpointMiddleware(stack, options); err != nil {
+		return err
+	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opDescribeSubnets(options.Region), middleware.Before); err != nil {
+		return err
+	}
+	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -222,6 +199,9 @@ func (c *Client) addOperationDescribeSubnetsMiddlewares(stack *middleware.Stack,
 		return err
 	}
 	if err = addRequestResponseLogging(stack, options); err != nil {
+		return err
+	}
+	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
 	return nil
@@ -237,8 +217,10 @@ var _ DescribeSubnetsAPIClient = (*Client)(nil)
 
 // DescribeSubnetsPaginatorOptions is the paginator options for DescribeSubnets
 type DescribeSubnetsPaginatorOptions struct {
-	// The maximum number of results to return with a single call. To retrieve the
-	// remaining results, make another call with the returned nextToken value.
+	// The maximum number of items to return for this request. To get the next page of
+	// items, make another request with the token returned in the output. For more
+	// information, see Pagination (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Query-Requests.html#api-pagination)
+	// .
 	Limit int32
 
 	// Set to true if pagination should stop if the service returns a pagination token
@@ -331,9 +313,9 @@ type SubnetAvailableWaiterOptions struct {
 	// MinDelay must resolve to a value lesser than or equal to the MaxDelay.
 	MinDelay time.Duration
 
-	// MaxDelay is the maximum amount of time to delay between retries. If unset or set
-	// to zero, SubnetAvailableWaiter will use default max delay of 120 seconds. Note
-	// that MaxDelay must resolve to value greater than or equal to the MinDelay.
+	// MaxDelay is the maximum amount of time to delay between retries. If unset or
+	// set to zero, SubnetAvailableWaiter will use default max delay of 120 seconds.
+	// Note that MaxDelay must resolve to value greater than or equal to the MinDelay.
 	MaxDelay time.Duration
 
 	// LogWaitAttempts is used to enable logging for waiter retry attempts
@@ -373,9 +355,9 @@ func NewSubnetAvailableWaiter(client DescribeSubnetsAPIClient, optFns ...func(*S
 	}
 }
 
-// Wait calls the waiter function for SubnetAvailable waiter. The maxWaitDur is the
-// maximum wait duration the waiter will wait. The maxWaitDur is required and must
-// be greater than zero.
+// Wait calls the waiter function for SubnetAvailable waiter. The maxWaitDur is
+// the maximum wait duration the waiter will wait. The maxWaitDur is required and
+// must be greater than zero.
 func (w *SubnetAvailableWaiter) Wait(ctx context.Context, params *DescribeSubnetsInput, maxWaitDur time.Duration, optFns ...func(*SubnetAvailableWaiterOptions)) error {
 	_, err := w.WaitForOutput(ctx, params, maxWaitDur, optFns...)
 	return err
@@ -500,4 +482,127 @@ func newServiceMetadataMiddleware_opDescribeSubnets(region string) *awsmiddlewar
 		SigningName:   "ec2",
 		OperationName: "DescribeSubnets",
 	}
+}
+
+type opDescribeSubnetsResolveEndpointMiddleware struct {
+	EndpointResolver EndpointResolverV2
+	BuiltInResolver  builtInParameterResolver
+}
+
+func (*opDescribeSubnetsResolveEndpointMiddleware) ID() string {
+	return "ResolveEndpointV2"
+}
+
+func (m *opDescribeSubnetsResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
+	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
+) {
+	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
+		return next.HandleSerialize(ctx, in)
+	}
+
+	req, ok := in.Request.(*smithyhttp.Request)
+	if !ok {
+		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
+	}
+
+	if m.EndpointResolver == nil {
+		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
+	}
+
+	params := EndpointParameters{}
+
+	m.BuiltInResolver.ResolveBuiltIns(&params)
+
+	var resolvedEndpoint smithyendpoints.Endpoint
+	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
+	if err != nil {
+		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
+	}
+
+	req.URL = &resolvedEndpoint.URI
+
+	for k := range resolvedEndpoint.Headers {
+		req.Header.Set(
+			k,
+			resolvedEndpoint.Headers.Get(k),
+		)
+	}
+
+	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
+	if err != nil {
+		var nfe *internalauth.NoAuthenticationSchemesFoundError
+		if errors.As(err, &nfe) {
+			// if no auth scheme is found, default to sigv4
+			signingName := "ec2"
+			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+
+		}
+		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
+		if errors.As(err, &ue) {
+			return out, metadata, fmt.Errorf(
+				"This operation requests signer version(s) %v but the client only supports %v",
+				ue.UnsupportedSchemes,
+				internalauth.SupportedSchemes,
+			)
+		}
+	}
+
+	for _, authScheme := range authSchemes {
+		switch authScheme.(type) {
+		case *internalauth.AuthenticationSchemeV4:
+			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
+			var signingName, signingRegion string
+			if v4Scheme.SigningName == nil {
+				signingName = "ec2"
+			} else {
+				signingName = *v4Scheme.SigningName
+			}
+			if v4Scheme.SigningRegion == nil {
+				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
+			} else {
+				signingRegion = *v4Scheme.SigningRegion
+			}
+			if v4Scheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+			break
+		case *internalauth.AuthenticationSchemeV4A:
+			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
+			if v4aScheme.SigningName == nil {
+				v4aScheme.SigningName = aws.String("ec2")
+			}
+			if v4aScheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
+			break
+		case *internalauth.AuthenticationSchemeNone:
+			break
+		}
+	}
+
+	return next.HandleSerialize(ctx, in)
+}
+
+func addDescribeSubnetsResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
+	return stack.Serialize.Insert(&opDescribeSubnetsResolveEndpointMiddleware{
+		EndpointResolver: options.EndpointResolverV2,
+		BuiltInResolver: &builtInResolver{
+			Region:       options.Region,
+			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
+			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
+			Endpoint:     options.BaseEndpoint,
+		},
+	}, "ResolveEndpoint", middleware.After)
 }
