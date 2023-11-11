@@ -45,3 +45,4 @@ When all users leave, the server will shut down after the defined period.
   - logs?
 - pipeline:
   - lamdba depends on image, image depends on ecr -> deadlock
+- missing default SG with ingress restriction to home IP
