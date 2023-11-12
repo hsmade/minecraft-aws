@@ -4,31 +4,36 @@ package ec2
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 // Modifies the specified EC2 Fleet. You can only modify an EC2 Fleet request of
-// type maintain. While the EC2 Fleet is being modified, it is in the modifying
+// type maintain . While the EC2 Fleet is being modified, it is in the modifying
 // state. To scale up your EC2 Fleet, increase its target capacity. The EC2 Fleet
 // launches the additional Spot Instances according to the allocation strategy for
-// the EC2 Fleet request. If the allocation strategy is lowest-price, the EC2 Fleet
-// launches instances using the Spot Instance pool with the lowest price. If the
-// allocation strategy is diversified, the EC2 Fleet distributes the instances
-// across the Spot Instance pools. If the allocation strategy is
-// capacity-optimized, EC2 Fleet launches instances from Spot Instance pools with
-// optimal capacity for the number of instances that are launching. To scale down
-// your EC2 Fleet, decrease its target capacity. First, the EC2 Fleet cancels any
-// open requests that exceed the new target capacity. You can request that the EC2
-// Fleet terminate Spot Instances until the size of the fleet no longer exceeds the
-// new target capacity. If the allocation strategy is lowest-price, the EC2 Fleet
+// the EC2 Fleet request. If the allocation strategy is lowest-price , the EC2
+// Fleet launches instances using the Spot Instance pool with the lowest price. If
+// the allocation strategy is diversified , the EC2 Fleet distributes the instances
+// across the Spot Instance pools. If the allocation strategy is capacity-optimized
+// , EC2 Fleet launches instances from Spot Instance pools with optimal capacity
+// for the number of instances that are launching. To scale down your EC2 Fleet,
+// decrease its target capacity. First, the EC2 Fleet cancels any open requests
+// that exceed the new target capacity. You can request that the EC2 Fleet
+// terminate Spot Instances until the size of the fleet no longer exceeds the new
+// target capacity. If the allocation strategy is lowest-price , the EC2 Fleet
 // terminates the instances with the highest price per unit. If the allocation
-// strategy is capacity-optimized, the EC2 Fleet terminates the instances in the
+// strategy is capacity-optimized , the EC2 Fleet terminates the instances in the
 // Spot Instance pools that have the least available Spot Instance capacity. If the
-// allocation strategy is diversified, the EC2 Fleet terminates instances across
+// allocation strategy is diversified , the EC2 Fleet terminates instances across
 // the Spot Instance pools. Alternatively, you can request that the EC2 Fleet keep
 // the fleet at its current size, but not replace any Spot Instances that are
 // interrupted or that you terminate manually. If you are finished with your EC2
@@ -61,12 +66,13 @@ type ModifyFleetInput struct {
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
-	// required permissions, the error response is DryRunOperation. Otherwise, it is
-	// UnauthorizedOperation.
+	// required permissions, the error response is DryRunOperation . Otherwise, it is
+	// UnauthorizedOperation .
 	DryRun *bool
 
 	// Indicates whether running instances should be terminated if the total target
 	// capacity of the EC2 Fleet is decreased below the current size of the EC2 Fleet.
+	// Supported only for fleets of type maintain .
 	ExcessCapacityTerminationPolicy types.FleetExcessCapacityTerminationPolicy
 
 	// The launch template and overrides.
@@ -80,7 +86,7 @@ type ModifyFleetInput struct {
 
 type ModifyFleetOutput struct {
 
-	// If the request succeeds, the response returns true. If the request fails, no
+	// If the request succeeds, the response returns true . If the request fails, no
 	// response is returned, and instead an error message is returned.
 	Return *bool
 
@@ -97,6 +103,9 @@ func (c *Client) addOperationModifyFleetMiddlewares(stack *middleware.Stack, opt
 	}
 	err = stack.Deserialize.Add(&awsEc2query_deserializeOpModifyFleet{}, middleware.After)
 	if err != nil {
+		return err
+	}
+	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
@@ -126,7 +135,7 @@ func (c *Client) addOperationModifyFleetMiddlewares(stack *middleware.Stack, opt
 	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = addClientUserAgent(stack); err != nil {
+	if err = addClientUserAgent(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
@@ -135,10 +144,16 @@ func (c *Client) addOperationModifyFleetMiddlewares(stack *middleware.Stack, opt
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
+	if err = addModifyFleetResolveEndpointMiddleware(stack, options); err != nil {
+		return err
+	}
 	if err = addOpModifyFleetValidationMiddleware(stack); err != nil {
 		return err
 	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opModifyFleet(options.Region), middleware.Before); err != nil {
+		return err
+	}
+	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -148,6 +163,9 @@ func (c *Client) addOperationModifyFleetMiddlewares(stack *middleware.Stack, opt
 		return err
 	}
 	if err = addRequestResponseLogging(stack, options); err != nil {
+		return err
+	}
+	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
 	return nil
@@ -160,4 +178,127 @@ func newServiceMetadataMiddleware_opModifyFleet(region string) *awsmiddleware.Re
 		SigningName:   "ec2",
 		OperationName: "ModifyFleet",
 	}
+}
+
+type opModifyFleetResolveEndpointMiddleware struct {
+	EndpointResolver EndpointResolverV2
+	BuiltInResolver  builtInParameterResolver
+}
+
+func (*opModifyFleetResolveEndpointMiddleware) ID() string {
+	return "ResolveEndpointV2"
+}
+
+func (m *opModifyFleetResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
+	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
+) {
+	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
+		return next.HandleSerialize(ctx, in)
+	}
+
+	req, ok := in.Request.(*smithyhttp.Request)
+	if !ok {
+		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
+	}
+
+	if m.EndpointResolver == nil {
+		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
+	}
+
+	params := EndpointParameters{}
+
+	m.BuiltInResolver.ResolveBuiltIns(&params)
+
+	var resolvedEndpoint smithyendpoints.Endpoint
+	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
+	if err != nil {
+		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
+	}
+
+	req.URL = &resolvedEndpoint.URI
+
+	for k := range resolvedEndpoint.Headers {
+		req.Header.Set(
+			k,
+			resolvedEndpoint.Headers.Get(k),
+		)
+	}
+
+	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
+	if err != nil {
+		var nfe *internalauth.NoAuthenticationSchemesFoundError
+		if errors.As(err, &nfe) {
+			// if no auth scheme is found, default to sigv4
+			signingName := "ec2"
+			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+
+		}
+		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
+		if errors.As(err, &ue) {
+			return out, metadata, fmt.Errorf(
+				"This operation requests signer version(s) %v but the client only supports %v",
+				ue.UnsupportedSchemes,
+				internalauth.SupportedSchemes,
+			)
+		}
+	}
+
+	for _, authScheme := range authSchemes {
+		switch authScheme.(type) {
+		case *internalauth.AuthenticationSchemeV4:
+			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
+			var signingName, signingRegion string
+			if v4Scheme.SigningName == nil {
+				signingName = "ec2"
+			} else {
+				signingName = *v4Scheme.SigningName
+			}
+			if v4Scheme.SigningRegion == nil {
+				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
+			} else {
+				signingRegion = *v4Scheme.SigningRegion
+			}
+			if v4Scheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+			break
+		case *internalauth.AuthenticationSchemeV4A:
+			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
+			if v4aScheme.SigningName == nil {
+				v4aScheme.SigningName = aws.String("ec2")
+			}
+			if v4aScheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
+			break
+		case *internalauth.AuthenticationSchemeNone:
+			break
+		}
+	}
+
+	return next.HandleSerialize(ctx, in)
+}
+
+func addModifyFleetResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
+	return stack.Serialize.Insert(&opModifyFleetResolveEndpointMiddleware{
+		EndpointResolver: options.EndpointResolverV2,
+		BuiltInResolver: &builtInResolver{
+			Region:       options.Region,
+			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
+			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
+			Endpoint:     options.BaseEndpoint,
+		},
+	}, "ResolveEndpoint", middleware.After)
 }
