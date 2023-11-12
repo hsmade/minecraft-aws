@@ -4,9 +4,14 @@ package ec2
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
@@ -15,46 +20,37 @@ import (
 // associate it with the VPC, causing all existing and new instances that you
 // launch in the VPC to use this set of DHCP options. The following are the
 // individual DHCP options you can specify. For more information about the options,
-// see RFC 2132 (http://www.ietf.org/rfc/rfc2132.txt).
+// see RFC 2132 (http://www.ietf.org/rfc/rfc2132.txt) .
+//   - domain-name-servers - The IP addresses of up to four domain name servers, or
+//     AmazonProvidedDNS. The default DHCP option set specifies AmazonProvidedDNS. If
+//     specifying more than one domain name server, specify the IP addresses in a
+//     single parameter, separated by commas. To have your instance receive a custom
+//     DNS hostname as specified in domain-name , you must set domain-name-servers to
+//     a custom DNS server.
+//   - domain-name - If you're using AmazonProvidedDNS in us-east-1 , specify
+//     ec2.internal . If you're using AmazonProvidedDNS in another Region, specify
+//     region.compute.internal (for example, ap-northeast-1.compute.internal ).
+//     Otherwise, specify a domain name (for example, ExampleCompany.com ). This
+//     value is used to complete unqualified DNS hostnames. Important: Some Linux
+//     operating systems accept multiple domain names separated by spaces. However,
+//     Windows and other Linux operating systems treat the value as a single domain,
+//     which results in unexpected behavior. If your DHCP options set is associated
+//     with a VPC that has instances with multiple operating systems, specify only one
+//     domain name.
+//   - ntp-servers - The IP addresses of up to four Network Time Protocol (NTP)
+//     servers.
+//   - netbios-name-servers - The IP addresses of up to four NetBIOS name servers.
+//   - netbios-node-type - The NetBIOS node type (1, 2, 4, or 8). We recommend that
+//     you specify 2 (broadcast and multicast are not currently supported). For more
+//     information about these node types, see RFC 2132 (http://www.ietf.org/rfc/rfc2132.txt)
+//     .
 //
-// * domain-name-servers - The
-// IP addresses of up to four domain name servers, or AmazonProvidedDNS. The
-// default DHCP option set specifies AmazonProvidedDNS. If specifying more than one
-// domain name server, specify the IP addresses in a single parameter, separated by
-// commas. To have your instance receive a custom DNS hostname as specified in
-// domain-name, you must set domain-name-servers to a custom DNS server.
-//
-// *
-// domain-name - If you're using AmazonProvidedDNS in us-east-1, specify
-// ec2.internal. If you're using AmazonProvidedDNS in another Region, specify
-// region.compute.internal (for example, ap-northeast-1.compute.internal).
-// Otherwise, specify a domain name (for example, ExampleCompany.com). This value
-// is used to complete unqualified DNS hostnames. Important: Some Linux operating
-// systems accept multiple domain names separated by spaces. However, Windows and
-// other Linux operating systems treat the value as a single domain, which results
-// in unexpected behavior. If your DHCP options set is associated with a VPC that
-// has instances with multiple operating systems, specify only one domain name.
-//
-// *
-// ntp-servers - The IP addresses of up to four Network Time Protocol (NTP)
-// servers.
-//
-// * netbios-name-servers - The IP addresses of up to four NetBIOS name
-// servers.
-//
-// * netbios-node-type - The NetBIOS node type (1, 2, 4, or 8). We
-// recommend that you specify 2 (broadcast and multicast are not currently
-// supported). For more information about these node types, see RFC 2132
-// (http://www.ietf.org/rfc/rfc2132.txt).
-//
-// Your VPC automatically starts out with a
-// set of DHCP options that includes only a DNS server that we provide
-// (AmazonProvidedDNS). If you create a set of options, and if your VPC has an
-// internet gateway, make sure to set the domain-name-servers option either to
-// AmazonProvidedDNS or to a domain name server of your choice. For more
-// information, see DHCP options sets
-// (https://docs.aws.amazon.com/vpc/latest/userguide/VPC_DHCP_Options.html) in the
-// Amazon Virtual Private Cloud User Guide.
+// Your VPC automatically starts out with a set of DHCP options that includes only
+// a DNS server that we provide (AmazonProvidedDNS). If you create a set of
+// options, and if your VPC has an internet gateway, make sure to set the
+// domain-name-servers option either to AmazonProvidedDNS or to a domain name
+// server of your choice. For more information, see DHCP options sets (https://docs.aws.amazon.com/vpc/latest/userguide/VPC_DHCP_Options.html)
+// in the Amazon VPC User Guide.
 func (c *Client) CreateDhcpOptions(ctx context.Context, params *CreateDhcpOptionsInput, optFns ...func(*Options)) (*CreateDhcpOptionsOutput, error) {
 	if params == nil {
 		params = &CreateDhcpOptionsInput{}
@@ -79,8 +75,8 @@ type CreateDhcpOptionsInput struct {
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
-	// required permissions, the error response is DryRunOperation. Otherwise, it is
-	// UnauthorizedOperation.
+	// required permissions, the error response is DryRunOperation . Otherwise, it is
+	// UnauthorizedOperation .
 	DryRun *bool
 
 	// The tags to assign to the DHCP option.
@@ -107,6 +103,9 @@ func (c *Client) addOperationCreateDhcpOptionsMiddlewares(stack *middleware.Stac
 	}
 	err = stack.Deserialize.Add(&awsEc2query_deserializeOpCreateDhcpOptions{}, middleware.After)
 	if err != nil {
+		return err
+	}
+	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
@@ -136,7 +135,7 @@ func (c *Client) addOperationCreateDhcpOptionsMiddlewares(stack *middleware.Stac
 	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = addClientUserAgent(stack); err != nil {
+	if err = addClientUserAgent(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
@@ -145,10 +144,16 @@ func (c *Client) addOperationCreateDhcpOptionsMiddlewares(stack *middleware.Stac
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
+	if err = addCreateDhcpOptionsResolveEndpointMiddleware(stack, options); err != nil {
+		return err
+	}
 	if err = addOpCreateDhcpOptionsValidationMiddleware(stack); err != nil {
 		return err
 	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opCreateDhcpOptions(options.Region), middleware.Before); err != nil {
+		return err
+	}
+	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -158,6 +163,9 @@ func (c *Client) addOperationCreateDhcpOptionsMiddlewares(stack *middleware.Stac
 		return err
 	}
 	if err = addRequestResponseLogging(stack, options); err != nil {
+		return err
+	}
+	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
 	return nil
@@ -170,4 +178,127 @@ func newServiceMetadataMiddleware_opCreateDhcpOptions(region string) *awsmiddlew
 		SigningName:   "ec2",
 		OperationName: "CreateDhcpOptions",
 	}
+}
+
+type opCreateDhcpOptionsResolveEndpointMiddleware struct {
+	EndpointResolver EndpointResolverV2
+	BuiltInResolver  builtInParameterResolver
+}
+
+func (*opCreateDhcpOptionsResolveEndpointMiddleware) ID() string {
+	return "ResolveEndpointV2"
+}
+
+func (m *opCreateDhcpOptionsResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
+	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
+) {
+	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
+		return next.HandleSerialize(ctx, in)
+	}
+
+	req, ok := in.Request.(*smithyhttp.Request)
+	if !ok {
+		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
+	}
+
+	if m.EndpointResolver == nil {
+		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
+	}
+
+	params := EndpointParameters{}
+
+	m.BuiltInResolver.ResolveBuiltIns(&params)
+
+	var resolvedEndpoint smithyendpoints.Endpoint
+	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
+	if err != nil {
+		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
+	}
+
+	req.URL = &resolvedEndpoint.URI
+
+	for k := range resolvedEndpoint.Headers {
+		req.Header.Set(
+			k,
+			resolvedEndpoint.Headers.Get(k),
+		)
+	}
+
+	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
+	if err != nil {
+		var nfe *internalauth.NoAuthenticationSchemesFoundError
+		if errors.As(err, &nfe) {
+			// if no auth scheme is found, default to sigv4
+			signingName := "ec2"
+			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+
+		}
+		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
+		if errors.As(err, &ue) {
+			return out, metadata, fmt.Errorf(
+				"This operation requests signer version(s) %v but the client only supports %v",
+				ue.UnsupportedSchemes,
+				internalauth.SupportedSchemes,
+			)
+		}
+	}
+
+	for _, authScheme := range authSchemes {
+		switch authScheme.(type) {
+		case *internalauth.AuthenticationSchemeV4:
+			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
+			var signingName, signingRegion string
+			if v4Scheme.SigningName == nil {
+				signingName = "ec2"
+			} else {
+				signingName = *v4Scheme.SigningName
+			}
+			if v4Scheme.SigningRegion == nil {
+				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
+			} else {
+				signingRegion = *v4Scheme.SigningRegion
+			}
+			if v4Scheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+			break
+		case *internalauth.AuthenticationSchemeV4A:
+			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
+			if v4aScheme.SigningName == nil {
+				v4aScheme.SigningName = aws.String("ec2")
+			}
+			if v4aScheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
+			break
+		case *internalauth.AuthenticationSchemeNone:
+			break
+		}
+	}
+
+	return next.HandleSerialize(ctx, in)
+}
+
+func addCreateDhcpOptionsResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
+	return stack.Serialize.Insert(&opCreateDhcpOptionsResolveEndpointMiddleware{
+		EndpointResolver: options.EndpointResolverV2,
+		BuiltInResolver: &builtInResolver{
+			Region:       options.Region,
+			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
+			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
+			Endpoint:     options.BaseEndpoint,
+		},
+	}, "ResolveEndpoint", middleware.After)
 }

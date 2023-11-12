@@ -4,16 +4,20 @@ package route53
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Retrieve a list of the health checks that are associated with the current Amazon
-// Web Services account.
+// Retrieve a list of the health checks that are associated with the current
+// Amazon Web Services account.
 func (c *Client) ListHealthChecks(ctx context.Context, params *ListHealthChecksInput, optFns ...func(*Options)) (*ListHealthChecksOutput, error) {
 	if params == nil {
 		params = &ListHealthChecksInput{}
@@ -33,18 +37,18 @@ func (c *Client) ListHealthChecks(ctx context.Context, params *ListHealthChecksI
 // current Amazon Web Services account.
 type ListHealthChecksInput struct {
 
-	// If the value of IsTruncated in the previous response was true, you have more
+	// If the value of IsTruncated in the previous response was true , you have more
 	// health checks. To get another group, submit another ListHealthChecks request.
-	// For the value of marker, specify the value of NextMarker from the previous
+	// For the value of marker , specify the value of NextMarker from the previous
 	// response, which is the ID of the first health check that Amazon Route 53 will
 	// return if you submit another request. If the value of IsTruncated in the
-	// previous response was false, there are no more health checks to get.
+	// previous response was false , there are no more health checks to get.
 	Marker *string
 
 	// The maximum number of health checks that you want ListHealthChecks to return in
-	// response to the current request. Amazon Route 53 returns a maximum of 100 items.
-	// If you set MaxItems to a value greater than 100, Route 53 returns only the first
-	// 100 health checks.
+	// response to the current request. Amazon Route 53 returns a maximum of 1000
+	// items. If you set MaxItems to a value greater than 1000, Route 53 returns only
+	// the first 1000 health checks.
 	MaxItems *int32
 
 	noSmithyDocumentSerde
@@ -67,7 +71,7 @@ type ListHealthChecksOutput struct {
 	// This member is required.
 	IsTruncated bool
 
-	// For the second and subsequent calls to ListHealthChecks, Marker is the value
+	// For the second and subsequent calls to ListHealthChecks , Marker is the value
 	// that you specified for the marker parameter in the previous request.
 	//
 	// This member is required.
@@ -79,7 +83,7 @@ type ListHealthChecksOutput struct {
 	// This member is required.
 	MaxItems *int32
 
-	// If IsTruncated is true, the value of NextMarker identifies the first health
+	// If IsTruncated is true , the value of NextMarker identifies the first health
 	// check that Amazon Route 53 returns if you submit another ListHealthChecks
 	// request and specify the value of NextMarker in the marker parameter.
 	NextMarker *string
@@ -97,6 +101,9 @@ func (c *Client) addOperationListHealthChecksMiddlewares(stack *middleware.Stack
 	}
 	err = stack.Deserialize.Add(&awsRestxml_deserializeOpListHealthChecks{}, middleware.After)
 	if err != nil {
+		return err
+	}
+	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
@@ -126,7 +133,7 @@ func (c *Client) addOperationListHealthChecksMiddlewares(stack *middleware.Stack
 	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = addClientUserAgent(stack); err != nil {
+	if err = addClientUserAgent(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
@@ -135,7 +142,13 @@ func (c *Client) addOperationListHealthChecksMiddlewares(stack *middleware.Stack
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
+	if err = addListHealthChecksResolveEndpointMiddleware(stack, options); err != nil {
+		return err
+	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opListHealthChecks(options.Region), middleware.Before); err != nil {
+		return err
+	}
+	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -145,6 +158,9 @@ func (c *Client) addOperationListHealthChecksMiddlewares(stack *middleware.Stack
 		return err
 	}
 	if err = addRequestResponseLogging(stack, options); err != nil {
+		return err
+	}
+	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
 	return nil
@@ -161,9 +177,9 @@ var _ ListHealthChecksAPIClient = (*Client)(nil)
 // ListHealthChecksPaginatorOptions is the paginator options for ListHealthChecks
 type ListHealthChecksPaginatorOptions struct {
 	// The maximum number of health checks that you want ListHealthChecks to return in
-	// response to the current request. Amazon Route 53 returns a maximum of 100 items.
-	// If you set MaxItems to a value greater than 100, Route 53 returns only the first
-	// 100 health checks.
+	// response to the current request. Amazon Route 53 returns a maximum of 1000
+	// items. If you set MaxItems to a value greater than 1000, Route 53 returns only
+	// the first 1000 health checks.
 	Limit int32
 
 	// Set to true if pagination should stop if the service returns a pagination token
@@ -250,4 +266,127 @@ func newServiceMetadataMiddleware_opListHealthChecks(region string) *awsmiddlewa
 		SigningName:   "route53",
 		OperationName: "ListHealthChecks",
 	}
+}
+
+type opListHealthChecksResolveEndpointMiddleware struct {
+	EndpointResolver EndpointResolverV2
+	BuiltInResolver  builtInParameterResolver
+}
+
+func (*opListHealthChecksResolveEndpointMiddleware) ID() string {
+	return "ResolveEndpointV2"
+}
+
+func (m *opListHealthChecksResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
+	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
+) {
+	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
+		return next.HandleSerialize(ctx, in)
+	}
+
+	req, ok := in.Request.(*smithyhttp.Request)
+	if !ok {
+		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
+	}
+
+	if m.EndpointResolver == nil {
+		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
+	}
+
+	params := EndpointParameters{}
+
+	m.BuiltInResolver.ResolveBuiltIns(&params)
+
+	var resolvedEndpoint smithyendpoints.Endpoint
+	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
+	if err != nil {
+		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
+	}
+
+	req.URL = &resolvedEndpoint.URI
+
+	for k := range resolvedEndpoint.Headers {
+		req.Header.Set(
+			k,
+			resolvedEndpoint.Headers.Get(k),
+		)
+	}
+
+	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
+	if err != nil {
+		var nfe *internalauth.NoAuthenticationSchemesFoundError
+		if errors.As(err, &nfe) {
+			// if no auth scheme is found, default to sigv4
+			signingName := "route53"
+			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+
+		}
+		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
+		if errors.As(err, &ue) {
+			return out, metadata, fmt.Errorf(
+				"This operation requests signer version(s) %v but the client only supports %v",
+				ue.UnsupportedSchemes,
+				internalauth.SupportedSchemes,
+			)
+		}
+	}
+
+	for _, authScheme := range authSchemes {
+		switch authScheme.(type) {
+		case *internalauth.AuthenticationSchemeV4:
+			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
+			var signingName, signingRegion string
+			if v4Scheme.SigningName == nil {
+				signingName = "route53"
+			} else {
+				signingName = *v4Scheme.SigningName
+			}
+			if v4Scheme.SigningRegion == nil {
+				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
+			} else {
+				signingRegion = *v4Scheme.SigningRegion
+			}
+			if v4Scheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+			break
+		case *internalauth.AuthenticationSchemeV4A:
+			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
+			if v4aScheme.SigningName == nil {
+				v4aScheme.SigningName = aws.String("route53")
+			}
+			if v4aScheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
+			break
+		case *internalauth.AuthenticationSchemeNone:
+			break
+		}
+	}
+
+	return next.HandleSerialize(ctx, in)
+}
+
+func addListHealthChecksResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
+	return stack.Serialize.Insert(&opListHealthChecksResolveEndpointMiddleware{
+		EndpointResolver: options.EndpointResolverV2,
+		BuiltInResolver: &builtInResolver{
+			Region:       options.Region,
+			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
+			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
+			Endpoint:     options.BaseEndpoint,
+		},
+	}, "ResolveEndpoint", middleware.After)
 }
