@@ -4,10 +4,14 @@ package efs
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/efs/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
@@ -19,13 +23,19 @@ import (
 // the NFS client. The file system path is exposed as the access point's root
 // directory. Applications using the access point can only access data in the
 // application's own directory and any subdirectories. To learn more, see Mounting
-// a file system using EFS access points
-// (https://docs.aws.amazon.com/efs/latest/ug/efs-access-points.html). If multiple
-// requests to create access points on the same file system are sent in quick
-// succession, and the file system is near the limit of 1000 access points, you may
-// experience a throttling response for these requests. This is to ensure that the
-// file system does not exceed the stated access point limit. This operation
-// requires permissions for the elasticfilesystem:CreateAccessPoint action.
+// a file system using EFS access points (https://docs.aws.amazon.com/efs/latest/ug/efs-access-points.html)
+// . If multiple requests to create access points on the same file system are sent
+// in quick succession, and the file system is near the limit of 1,000 access
+// points, you may experience a throttling response for these requests. This is to
+// ensure that the file system does not exceed the stated access point limit. This
+// operation requires permissions for the elasticfilesystem:CreateAccessPoint
+// action. Access points can be tagged on creation. If tags are specified in the
+// creation action, IAM performs additional authorization on the
+// elasticfilesystem:TagResource action to verify if users have permissions to
+// create tags. Therefore, you must grant explicit permissions to use the
+// elasticfilesystem:TagResource action. For more information, see Granting
+// permissions to tag resources during creation (https://docs.aws.amazon.com/efs/latest/ug/using-tags-efs.html#supported-iam-actions-tagging.html)
+// .
 func (c *Client) CreateAccessPoint(ctx context.Context, params *CreateAccessPointInput, optFns ...func(*Options)) (*CreateAccessPointOutput, error) {
 	if params == nil {
 		params = &CreateAccessPointInput{}
@@ -63,8 +73,8 @@ type CreateAccessPointInput struct {
 	// access point. The clients using the access point can only access the root
 	// directory and below. If the RootDirectory > Path specified does not exist, EFS
 	// creates it and applies the CreationInfo settings when a client connects to an
-	// access point. When specifying a RootDirectory, you must provide the Path, and
-	// the CreationInfo. Amazon EFS creates a root directory only if you have provided
+	// access point. When specifying a RootDirectory , you must provide the Path , and
+	// the CreationInfo . Amazon EFS creates a root directory only if you have provided
 	// the CreationInfo: OwnUid, OwnGID, and permissions for the directory. If you do
 	// not provide this information, Amazon EFS does not create the root directory. If
 	// the root directory does not exist, attempts to mount using the access point will
@@ -109,8 +119,8 @@ type CreateAccessPointOutput struct {
 	// using the access point.
 	PosixUser *types.PosixUser
 
-	// The directory on the Amazon EFS file system that the access point exposes as the
-	// root directory to NFS clients using the access point.
+	// The directory on the Amazon EFS file system that the access point exposes as
+	// the root directory to NFS clients using the access point.
 	RootDirectory *types.RootDirectory
 
 	// The tags associated with the access point, presented as an array of Tag objects.
@@ -129,6 +139,9 @@ func (c *Client) addOperationCreateAccessPointMiddlewares(stack *middleware.Stac
 	}
 	err = stack.Deserialize.Add(&awsRestjson1_deserializeOpCreateAccessPoint{}, middleware.After)
 	if err != nil {
+		return err
+	}
+	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
@@ -158,13 +171,16 @@ func (c *Client) addOperationCreateAccessPointMiddlewares(stack *middleware.Stac
 	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = addClientUserAgent(stack); err != nil {
+	if err = addClientUserAgent(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addCreateAccessPointResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
 	if err = addIdempotencyToken_opCreateAccessPointMiddleware(stack, options); err != nil {
@@ -176,6 +192,9 @@ func (c *Client) addOperationCreateAccessPointMiddlewares(stack *middleware.Stac
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opCreateAccessPoint(options.Region), middleware.Before); err != nil {
 		return err
 	}
+	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
+		return err
+	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
 		return err
 	}
@@ -183,6 +202,9 @@ func (c *Client) addOperationCreateAccessPointMiddlewares(stack *middleware.Stac
 		return err
 	}
 	if err = addRequestResponseLogging(stack, options); err != nil {
+		return err
+	}
+	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
 	return nil
@@ -228,4 +250,127 @@ func newServiceMetadataMiddleware_opCreateAccessPoint(region string) *awsmiddlew
 		SigningName:   "elasticfilesystem",
 		OperationName: "CreateAccessPoint",
 	}
+}
+
+type opCreateAccessPointResolveEndpointMiddleware struct {
+	EndpointResolver EndpointResolverV2
+	BuiltInResolver  builtInParameterResolver
+}
+
+func (*opCreateAccessPointResolveEndpointMiddleware) ID() string {
+	return "ResolveEndpointV2"
+}
+
+func (m *opCreateAccessPointResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
+	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
+) {
+	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
+		return next.HandleSerialize(ctx, in)
+	}
+
+	req, ok := in.Request.(*smithyhttp.Request)
+	if !ok {
+		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
+	}
+
+	if m.EndpointResolver == nil {
+		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
+	}
+
+	params := EndpointParameters{}
+
+	m.BuiltInResolver.ResolveBuiltIns(&params)
+
+	var resolvedEndpoint smithyendpoints.Endpoint
+	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
+	if err != nil {
+		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
+	}
+
+	req.URL = &resolvedEndpoint.URI
+
+	for k := range resolvedEndpoint.Headers {
+		req.Header.Set(
+			k,
+			resolvedEndpoint.Headers.Get(k),
+		)
+	}
+
+	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
+	if err != nil {
+		var nfe *internalauth.NoAuthenticationSchemesFoundError
+		if errors.As(err, &nfe) {
+			// if no auth scheme is found, default to sigv4
+			signingName := "elasticfilesystem"
+			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+
+		}
+		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
+		if errors.As(err, &ue) {
+			return out, metadata, fmt.Errorf(
+				"This operation requests signer version(s) %v but the client only supports %v",
+				ue.UnsupportedSchemes,
+				internalauth.SupportedSchemes,
+			)
+		}
+	}
+
+	for _, authScheme := range authSchemes {
+		switch authScheme.(type) {
+		case *internalauth.AuthenticationSchemeV4:
+			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
+			var signingName, signingRegion string
+			if v4Scheme.SigningName == nil {
+				signingName = "elasticfilesystem"
+			} else {
+				signingName = *v4Scheme.SigningName
+			}
+			if v4Scheme.SigningRegion == nil {
+				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
+			} else {
+				signingRegion = *v4Scheme.SigningRegion
+			}
+			if v4Scheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+			break
+		case *internalauth.AuthenticationSchemeV4A:
+			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
+			if v4aScheme.SigningName == nil {
+				v4aScheme.SigningName = aws.String("elasticfilesystem")
+			}
+			if v4aScheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
+			break
+		case *internalauth.AuthenticationSchemeNone:
+			break
+		}
+	}
+
+	return next.HandleSerialize(ctx, in)
+}
+
+func addCreateAccessPointResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
+	return stack.Serialize.Insert(&opCreateAccessPointResolveEndpointMiddleware{
+		EndpointResolver: options.EndpointResolverV2,
+		BuiltInResolver: &builtInResolver{
+			Region:       options.Region,
+			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
+			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
+			Endpoint:     options.BaseEndpoint,
+		},
+	}, "ResolveEndpoint", middleware.After)
 }

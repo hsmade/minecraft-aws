@@ -70,8 +70,8 @@ github.com/aws/aws-sdk-go-v2/internal/ini
 github.com/aws/aws-sdk-go-v2/service/ec2
 github.com/aws/aws-sdk-go-v2/service/ec2/internal/endpoints
 github.com/aws/aws-sdk-go-v2/service/ec2/types
-# github.com/aws/aws-sdk-go-v2/service/efs v1.19.7
-## explicit; go 1.15
+# github.com/aws/aws-sdk-go-v2/service/efs v1.23.1
+## explicit; go 1.19
 github.com/aws/aws-sdk-go-v2/service/efs
 github.com/aws/aws-sdk-go-v2/service/efs/internal/endpoints
 github.com/aws/aws-sdk-go-v2/service/efs/types
