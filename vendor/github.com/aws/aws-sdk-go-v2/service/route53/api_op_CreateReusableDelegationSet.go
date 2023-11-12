@@ -4,9 +4,14 @@ package route53
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
@@ -18,47 +23,31 @@ import (
 // the CreateReusableDelegationSet request. You can't associate a reusable
 // delegation set with a private hosted zone. For information about using a
 // reusable delegation set to configure white label name servers, see Configuring
-// White Label Name Servers
-// (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/white-label-name-servers.html).
-// The process for migrating existing hosted zones to use a reusable delegation set
-// is comparable to the process for configuring white label name servers. You need
-// to perform the following steps:
+// White Label Name Servers (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/white-label-name-servers.html)
+// . The process for migrating existing hosted zones to use a reusable delegation
+// set is comparable to the process for configuring white label name servers. You
+// need to perform the following steps:
+//   - Create a reusable delegation set.
+//   - Recreate hosted zones, and reduce the TTL to 60 seconds or less.
+//   - Recreate resource record sets in the new hosted zones.
+//   - Change the registrar's name servers to use the name servers for the new
+//     hosted zones.
+//   - Monitor traffic for the website or application.
+//   - Change TTLs back to their original values.
 //
-// * Create a reusable delegation set.
-//
-// * Recreate
-// hosted zones, and reduce the TTL to 60 seconds or less.
-//
-// * Recreate resource
-// record sets in the new hosted zones.
-//
-// * Change the registrar's name servers to
-// use the name servers for the new hosted zones.
-//
-// * Monitor traffic for the
-// website or application.
-//
-// * Change TTLs back to their original values.
-//
-// If you
-// want to migrate existing hosted zones to use a reusable delegation set, the
-// existing hosted zones can't use any of the name servers that are assigned to the
-// reusable delegation set. If one or more hosted zones do use one or more name
+// If you want to migrate existing hosted zones to use a reusable delegation set,
+// the existing hosted zones can't use any of the name servers that are assigned to
+// the reusable delegation set. If one or more hosted zones do use one or more name
 // servers that are assigned to the reusable delegation set, you can do one of the
 // following:
-//
-// * For small numbers of hosted zones—up to a few hundred—it's
-// relatively easy to create reusable delegation sets until you get one that has
-// four name servers that don't overlap with any of the name servers in your hosted
-// zones.
-//
-// * For larger numbers of hosted zones, the easiest solution is to use
-// more than one reusable delegation set.
-//
-// * For larger numbers of hosted zones,
-// you can also migrate hosted zones that have overlapping name servers to hosted
-// zones that don't have overlapping name servers, then migrate the hosted zones
-// again to use the reusable delegation set.
+//   - For small numbers of hosted zones—up to a few hundred—it's relatively easy
+//     to create reusable delegation sets until you get one that has four name servers
+//     that don't overlap with any of the name servers in your hosted zones.
+//   - For larger numbers of hosted zones, the easiest solution is to use more
+//     than one reusable delegation set.
+//   - For larger numbers of hosted zones, you can also migrate hosted zones that
+//     have overlapping name servers to hosted zones that don't have overlapping name
+//     servers, then migrate the hosted zones again to use the reusable delegation set.
 func (c *Client) CreateReusableDelegationSet(ctx context.Context, params *CreateReusableDelegationSetInput, optFns ...func(*Options)) (*CreateReusableDelegationSetOutput, error) {
 	if params == nil {
 		params = &CreateReusableDelegationSetInput{}
@@ -76,11 +65,11 @@ func (c *Client) CreateReusableDelegationSet(ctx context.Context, params *Create
 
 type CreateReusableDelegationSetInput struct {
 
-	// A unique string that identifies the request, and that allows you to retry failed
-	// CreateReusableDelegationSet requests without the risk of executing the operation
-	// twice. You must use a unique CallerReference string every time you submit a
-	// CreateReusableDelegationSet request. CallerReference can be any unique string,
-	// for example a date/time stamp.
+	// A unique string that identifies the request, and that allows you to retry
+	// failed CreateReusableDelegationSet requests without the risk of executing the
+	// operation twice. You must use a unique CallerReference string every time you
+	// submit a CreateReusableDelegationSet request. CallerReference can be any unique
+	// string, for example a date/time stamp.
 	//
 	// This member is required.
 	CallerReference *string
@@ -119,6 +108,9 @@ func (c *Client) addOperationCreateReusableDelegationSetMiddlewares(stack *middl
 	if err != nil {
 		return err
 	}
+	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
+		return err
+	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
 		return err
 	}
@@ -146,7 +138,7 @@ func (c *Client) addOperationCreateReusableDelegationSetMiddlewares(stack *middl
 	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = addClientUserAgent(stack); err != nil {
+	if err = addClientUserAgent(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
@@ -155,10 +147,16 @@ func (c *Client) addOperationCreateReusableDelegationSetMiddlewares(stack *middl
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
+	if err = addCreateReusableDelegationSetResolveEndpointMiddleware(stack, options); err != nil {
+		return err
+	}
 	if err = addOpCreateReusableDelegationSetValidationMiddleware(stack); err != nil {
 		return err
 	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opCreateReusableDelegationSet(options.Region), middleware.Before); err != nil {
+		return err
+	}
+	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -173,6 +171,9 @@ func (c *Client) addOperationCreateReusableDelegationSetMiddlewares(stack *middl
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
+	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -183,4 +184,127 @@ func newServiceMetadataMiddleware_opCreateReusableDelegationSet(region string) *
 		SigningName:   "route53",
 		OperationName: "CreateReusableDelegationSet",
 	}
+}
+
+type opCreateReusableDelegationSetResolveEndpointMiddleware struct {
+	EndpointResolver EndpointResolverV2
+	BuiltInResolver  builtInParameterResolver
+}
+
+func (*opCreateReusableDelegationSetResolveEndpointMiddleware) ID() string {
+	return "ResolveEndpointV2"
+}
+
+func (m *opCreateReusableDelegationSetResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
+	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
+) {
+	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
+		return next.HandleSerialize(ctx, in)
+	}
+
+	req, ok := in.Request.(*smithyhttp.Request)
+	if !ok {
+		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
+	}
+
+	if m.EndpointResolver == nil {
+		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
+	}
+
+	params := EndpointParameters{}
+
+	m.BuiltInResolver.ResolveBuiltIns(&params)
+
+	var resolvedEndpoint smithyendpoints.Endpoint
+	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
+	if err != nil {
+		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
+	}
+
+	req.URL = &resolvedEndpoint.URI
+
+	for k := range resolvedEndpoint.Headers {
+		req.Header.Set(
+			k,
+			resolvedEndpoint.Headers.Get(k),
+		)
+	}
+
+	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
+	if err != nil {
+		var nfe *internalauth.NoAuthenticationSchemesFoundError
+		if errors.As(err, &nfe) {
+			// if no auth scheme is found, default to sigv4
+			signingName := "route53"
+			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+
+		}
+		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
+		if errors.As(err, &ue) {
+			return out, metadata, fmt.Errorf(
+				"This operation requests signer version(s) %v but the client only supports %v",
+				ue.UnsupportedSchemes,
+				internalauth.SupportedSchemes,
+			)
+		}
+	}
+
+	for _, authScheme := range authSchemes {
+		switch authScheme.(type) {
+		case *internalauth.AuthenticationSchemeV4:
+			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
+			var signingName, signingRegion string
+			if v4Scheme.SigningName == nil {
+				signingName = "route53"
+			} else {
+				signingName = *v4Scheme.SigningName
+			}
+			if v4Scheme.SigningRegion == nil {
+				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
+			} else {
+				signingRegion = *v4Scheme.SigningRegion
+			}
+			if v4Scheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, signingName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
+			break
+		case *internalauth.AuthenticationSchemeV4A:
+			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
+			if v4aScheme.SigningName == nil {
+				v4aScheme.SigningName = aws.String("route53")
+			}
+			if v4aScheme.DisableDoubleEncoding != nil {
+				// The signer sets an equivalent value at client initialization time.
+				// Setting this context value will cause the signer to extract it
+				// and override the value set at client initialization time.
+				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
+			}
+			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
+			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
+			break
+		case *internalauth.AuthenticationSchemeNone:
+			break
+		}
+	}
+
+	return next.HandleSerialize(ctx, in)
+}
+
+func addCreateReusableDelegationSetResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
+	return stack.Serialize.Insert(&opCreateReusableDelegationSetResolveEndpointMiddleware{
+		EndpointResolver: options.EndpointResolverV2,
+		BuiltInResolver: &builtInResolver{
+			Region:       options.Region,
+			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
+			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
+			Endpoint:     options.BaseEndpoint,
+		},
+	}, "ResolveEndpoint", middleware.After)
 }
