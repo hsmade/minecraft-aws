@@ -216,9 +216,9 @@ func (S Server) Start() error {
 		IamInstanceProfile: &ec2Types.IamInstanceProfileSpecification{
 			Name: aws.String("ssm"),
 		},
-		ImageId:                           aws.String("ami-035d8954fec8a54e0"), // FIXME: get from env?
+		ImageId:                           aws.String("ami-06d94a781b544c133"), // FIXME: get from env?
 		InstanceInitiatedShutdownBehavior: "terminate",
-		InstanceType:                      "t4g.medium", // FIXME: get from env?
+		InstanceType:                      "t3a.medium", // FIXME: get from env?
 		SecurityGroups:                    []string{"minecraft", "minecraft-efs"},
 		MaxCount:                          aws.Int32(1),
 		MinCount:                          aws.Int32(1),
