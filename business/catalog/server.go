@@ -218,7 +218,7 @@ func (S Server) Start() error {
 		},
 		ImageId:                           aws.String("ami-06d94a781b544c133"), // FIXME: get from env?
 		InstanceInitiatedShutdownBehavior: "terminate",
-		InstanceType:                      "t2.medium", // FIXME: get from env?
+		InstanceType:                      "t4g.medium", // FIXME: get from env?
 		SecurityGroups:                    []string{"minecraft", "minecraft-efs"},
 		MaxCount:                          aws.Int32(1),
 		MinCount:                          aws.Int32(1),
