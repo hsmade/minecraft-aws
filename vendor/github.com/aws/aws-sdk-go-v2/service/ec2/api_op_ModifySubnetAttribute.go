@@ -4,28 +4,31 @@ package ec2
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
-	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Modifies a subnet attribute. You can only modify one attribute at a time. Use
-// this action to modify subnets on Amazon Web Services Outposts.
+// Modifies a subnet attribute. You can only modify one attribute at a time.
+//
+// Use this action to modify subnets on Amazon Web Services Outposts.
+//
 //   - To modify a subnet on an Outpost rack, set both MapCustomerOwnedIpOnLaunch
 //     and CustomerOwnedIpv4Pool . These two parameters act as a single attribute.
+//
 //   - To modify a subnet on an Outpost server, set either EnableLniAtDeviceIndex
 //     or DisableLniAtDeviceIndex .
 //
 // For more information about Amazon Web Services Outposts, see the following:
-//   - Outpost servers (https://docs.aws.amazon.com/outposts/latest/userguide/how-servers-work.html)
-//   - Outpost racks (https://docs.aws.amazon.com/outposts/latest/userguide/how-racks-work.html)
+//
+// [Outpost servers]
+//
+// [Outpost racks]
+//
+// [Outpost servers]: https://docs.aws.amazon.com/outposts/latest/userguide/how-servers-work.html
+// [Outpost racks]: https://docs.aws.amazon.com/outposts/latest/userguide/how-racks-work.html
 func (c *Client) ModifySubnetAttribute(ctx context.Context, params *ModifySubnetAttributeInput, optFns ...func(*Options)) (*ModifySubnetAttributeOutput, error) {
 	if params == nil {
 		params = &ModifySubnetAttributeInput{}
@@ -51,24 +54,34 @@ type ModifySubnetAttributeInput struct {
 	// Specify true to indicate that network interfaces created in the specified
 	// subnet should be assigned an IPv6 address. This includes a network interface
 	// that's created when launching an instance into the subnet (the instance
-	// therefore receives an IPv6 address). If you enable the IPv6 addressing feature
-	// for your subnet, your network interface or instance only receives an IPv6
-	// address if it's created using version 2016-11-15 or later of the Amazon EC2 API.
+	// therefore receives an IPv6 address).
+	//
+	// If you enable the IPv6 addressing feature for your subnet, your network
+	// interface or instance only receives an IPv6 address if it's created using
+	// version 2016-11-15 or later of the Amazon EC2 API.
 	AssignIpv6AddressOnCreation *types.AttributeBooleanValue
 
-	// The customer-owned IPv4 address pool associated with the subnet. You must set
-	// this value when you specify true for MapCustomerOwnedIpOnLaunch .
+	// The customer-owned IPv4 address pool associated with the subnet.
+	//
+	// You must set this value when you specify true for MapCustomerOwnedIpOnLaunch .
 	CustomerOwnedIpv4Pool *string
 
-	// Specify true to indicate that local network interfaces at the current position
+	//  Specify true to indicate that local network interfaces at the current position
 	// should be disabled.
 	DisableLniAtDeviceIndex *types.AttributeBooleanValue
 
 	// Indicates whether DNS queries made to the Amazon-provided DNS Resolver in this
 	// subnet should return synthetic IPv6 addresses for IPv4-only destinations.
+	//
+	// You must first configure a NAT gateway in a public subnet (separate from the
+	// subnet containing the IPv6-only workloads). For example, the subnet containing
+	// the NAT gateway should have a 0.0.0.0/0 route pointing to the internet gateway.
+	// For more information, see [Configure DNS64 and NAT64]in the Amazon VPC User Guide.
+	//
+	// [Configure DNS64 and NAT64]: https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-nat64-dns64.html#nat-gateway-nat64-dns64-walkthrough
 	EnableDns64 *types.AttributeBooleanValue
 
-	// Indicates the device position for local network interfaces in this subnet. For
+	//  Indicates the device position for local network interfaces in this subnet. For
 	// example, 1 indicates local network interfaces in this subnet are the secondary
 	// network interface (eth1). A local network interface cannot be the primary
 	// network interface (eth0).
@@ -83,13 +96,20 @@ type ModifySubnetAttributeInput struct {
 	EnableResourceNameDnsARecordOnLaunch *types.AttributeBooleanValue
 
 	// Specify true to indicate that network interfaces attached to instances created
-	// in the specified subnet should be assigned a customer-owned IPv4 address. When
-	// this value is true , you must specify the customer-owned IP pool using
+	// in the specified subnet should be assigned a customer-owned IPv4 address.
+	//
+	// When this value is true , you must specify the customer-owned IP pool using
 	// CustomerOwnedIpv4Pool .
 	MapCustomerOwnedIpOnLaunch *types.AttributeBooleanValue
 
 	// Specify true to indicate that network interfaces attached to instances created
 	// in the specified subnet should be assigned a public IPv4 address.
+	//
+	// Amazon Web Services charges for all public IPv4 addresses, including public
+	// IPv4 addresses associated with running instances and Elastic IP addresses. For
+	// more information, see the Public IPv4 Address tab on the [Amazon VPC pricing page].
+	//
+	// [Amazon VPC pricing page]: http://aws.amazon.com/vpc/pricing/
 	MapPublicIpOnLaunch *types.AttributeBooleanValue
 
 	// The type of hostname to assign to instances in the subnet at launch. For
@@ -110,6 +130,9 @@ type ModifySubnetAttributeOutput struct {
 }
 
 func (c *Client) addOperationModifySubnetAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
+		return err
+	}
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifySubnetAttribute{}, middleware.After)
 	if err != nil {
 		return err
@@ -118,34 +141,38 @@ func (c *Client) addOperationModifySubnetAttributeMiddlewares(stack *middleware.
 	if err != nil {
 		return err
 	}
+	if err := addProtocolFinalizerMiddlewares(stack, options, "ModifySubnetAttribute"); err != nil {
+		return fmt.Errorf("add protocol finalizers: %v", err)
+	}
+
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddClientRequestIDMiddleware(stack); err != nil {
+	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddComputeContentLengthMiddleware(stack); err != nil {
+	if err = addComputeContentLength(stack); err != nil {
 		return err
 	}
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = v4.AddComputePayloadSHA256Middleware(stack); err != nil {
+	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetryMiddlewares(stack, options); err != nil {
+	if err = addRetry(stack, options); err != nil {
 		return err
 	}
-	if err = addHTTPSignerV4Middleware(stack, options); err != nil {
+	if err = addRawResponseToMetadata(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRawResponseToMetadata(stack); err != nil {
+	if err = addRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
+	if err = addSpanRetryLoop(stack, options); err != nil {
 		return err
 	}
 	if err = addClientUserAgent(stack, options); err != nil {
@@ -157,7 +184,13 @@ func (c *Client) addOperationModifySubnetAttributeMiddlewares(stack *middleware.
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addModifySubnetAttributeResolveEndpointMiddleware(stack, options); err != nil {
+	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addTimeOffsetBuild(stack, c); err != nil {
+		return err
+	}
+	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
 	if err = addOpModifySubnetAttributeValidationMiddleware(stack); err != nil {
@@ -166,7 +199,7 @@ func (c *Client) addOperationModifySubnetAttributeMiddlewares(stack *middleware.
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opModifySubnetAttribute(options.Region), middleware.Before); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
+	if err = addRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -178,7 +211,19 @@ func (c *Client) addOperationModifySubnetAttributeMiddlewares(stack *middleware.
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
-	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
+	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
+	}
+	if err = addSpanInitializeStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanInitializeEnd(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil
@@ -188,130 +233,6 @@ func newServiceMetadataMiddleware_opModifySubnetAttribute(region string) *awsmid
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
-		SigningName:   "ec2",
 		OperationName: "ModifySubnetAttribute",
 	}
-}
-
-type opModifySubnetAttributeResolveEndpointMiddleware struct {
-	EndpointResolver EndpointResolverV2
-	BuiltInResolver  builtInParameterResolver
-}
-
-func (*opModifySubnetAttributeResolveEndpointMiddleware) ID() string {
-	return "ResolveEndpointV2"
-}
-
-func (m *opModifySubnetAttributeResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
-	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
-) {
-	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
-		return next.HandleSerialize(ctx, in)
-	}
-
-	req, ok := in.Request.(*smithyhttp.Request)
-	if !ok {
-		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
-	}
-
-	if m.EndpointResolver == nil {
-		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
-	}
-
-	params := EndpointParameters{}
-
-	m.BuiltInResolver.ResolveBuiltIns(&params)
-
-	var resolvedEndpoint smithyendpoints.Endpoint
-	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
-	if err != nil {
-		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
-	}
-
-	req.URL = &resolvedEndpoint.URI
-
-	for k := range resolvedEndpoint.Headers {
-		req.Header.Set(
-			k,
-			resolvedEndpoint.Headers.Get(k),
-		)
-	}
-
-	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
-	if err != nil {
-		var nfe *internalauth.NoAuthenticationSchemesFoundError
-		if errors.As(err, &nfe) {
-			// if no auth scheme is found, default to sigv4
-			signingName := "ec2"
-			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-
-		}
-		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
-		if errors.As(err, &ue) {
-			return out, metadata, fmt.Errorf(
-				"This operation requests signer version(s) %v but the client only supports %v",
-				ue.UnsupportedSchemes,
-				internalauth.SupportedSchemes,
-			)
-		}
-	}
-
-	for _, authScheme := range authSchemes {
-		switch authScheme.(type) {
-		case *internalauth.AuthenticationSchemeV4:
-			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
-			var signingName, signingRegion string
-			if v4Scheme.SigningName == nil {
-				signingName = "ec2"
-			} else {
-				signingName = *v4Scheme.SigningName
-			}
-			if v4Scheme.SigningRegion == nil {
-				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
-			} else {
-				signingRegion = *v4Scheme.SigningRegion
-			}
-			if v4Scheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-			break
-		case *internalauth.AuthenticationSchemeV4A:
-			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
-			if v4aScheme.SigningName == nil {
-				v4aScheme.SigningName = aws.String("ec2")
-			}
-			if v4aScheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
-			break
-		case *internalauth.AuthenticationSchemeNone:
-			break
-		}
-	}
-
-	return next.HandleSerialize(ctx, in)
-}
-
-func addModifySubnetAttributeResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
-	return stack.Serialize.Insert(&opModifySubnetAttributeResolveEndpointMiddleware{
-		EndpointResolver: options.EndpointResolverV2,
-		BuiltInResolver: &builtInResolver{
-			Region:       options.Region,
-			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
-			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
-			Endpoint:     options.BaseEndpoint,
-		},
-	}, "ResolveEndpoint", middleware.After)
 }

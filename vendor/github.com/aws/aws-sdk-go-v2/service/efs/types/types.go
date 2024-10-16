@@ -36,8 +36,8 @@ type AccessPointDescription struct {
 	// using the access point.
 	PosixUser *PosixUser
 
-	// The directory on the Amazon EFS file system that the access point exposes as
-	// the root directory to NFS clients using the access point.
+	// The directory on the EFS file system that the access point exposes as the root
+	// directory to NFS clients using the access point.
 	RootDirectory *RootDirectory
 
 	// The tags associated with the access point, presented as an array of Tag objects.
@@ -48,15 +48,20 @@ type AccessPointDescription struct {
 
 // The backup policy for the file system used to create automatic daily backups.
 // If status has a value of ENABLED , the file system is being automatically backed
-// up. For more information, see Automatic backups (https://docs.aws.amazon.com/efs/latest/ug/awsbackup.html#automatic-backups)
-// .
+// up. For more information, see [Automatic backups].
+//
+// [Automatic backups]: https://docs.aws.amazon.com/efs/latest/ug/awsbackup.html#automatic-backups
 type BackupPolicy struct {
 
 	// Describes the status of the file system's backup policy.
-	//   - ENABLED - EFS is automatically backing up the file system.
-	//   - ENABLING - EFS is turning on automatic backups for the file system.
-	//   - DISABLED - Automatic back ups are turned off for the file system.
-	//   - DISABLING - EFS is turning off automatic backups for the file system.
+	//
+	//   - ENABLED – EFS is automatically backing up the file system.
+	//
+	//   - ENABLING – EFS is turning on automatic backups for the file system.
+	//
+	//   - DISABLED – Automatic back ups are turned off for the file system.
+	//
+	//   - DISABLING – EFS is turning off automatic backups for the file system.
 	//
 	// This member is required.
 	Status Status
@@ -68,13 +73,15 @@ type BackupPolicy struct {
 // POSIX IDs and permissions to apply to the access point's RootDirectory > Path .
 // If the access point root directory does not exist, EFS creates it with these
 // settings when a client connects to the access point. When specifying
-// CreationInfo , you must include values for all properties. Amazon EFS creates a
-// root directory only if you have provided the CreationInfo: OwnUid, OwnGID, and
-// permissions for the directory. If you do not provide this information, Amazon
-// EFS does not create the root directory. If the root directory does not exist,
-// attempts to mount using the access point will fail. If you do not provide
-// CreationInfo and the specified RootDirectory does not exist, attempts to mount
-// the file system using the access point will fail.
+// CreationInfo , you must include values for all properties.
+//
+// Amazon EFS creates a root directory only if you have provided the CreationInfo:
+// OwnUid, OwnGID, and permissions for the directory. If you do not provide this
+// information, Amazon EFS does not create the root directory. If the root
+// directory does not exist, attempts to mount using the access point will fail.
+//
+// If you do not provide CreationInfo and the specified RootDirectory does not
+// exist, attempts to mount the file system using the access point will fail.
 type CreationInfo struct {
 
 	// Specifies the POSIX group ID to apply to the RootDirectory . Accepts values from
@@ -111,19 +118,22 @@ type Destination struct {
 	// This member is required.
 	Region *string
 
-	// Describes the status of the destination Amazon EFS file system.
+	// Describes the status of the destination EFS file system.
+	//
 	//   - The Paused state occurs as a result of opting out of the source or
 	//   destination Region after the replication configuration was created. To resume
 	//   replication for the file system, you need to again opt in to the Amazon Web
-	//   Services Region. For more information, see Managing Amazon Web Services
-	//   Regions (https://docs.aws.amazon.com/general/latest/gr/rande-manage.html#rande-manage-enable)
-	//   in the Amazon Web Services General Reference Guide.
+	//   Services Region. For more information, see [Managing Amazon Web Services Regions]in the Amazon Web Services General
+	//   Reference Guide.
+	//
 	//   - The Error state occurs when either the source or the destination file system
-	//   (or both) is in a failed state and is unrecoverable. For more information, see
-	//   Monitoring replication status (https://docs.aws.amazon.com/efs/latest/ug/awsbackup.html#restoring-backup-efsmonitoring-replication-status.html)
+	//   (or both) is in a failed state and is unrecoverable. For more information, see [Monitoring replication status]
 	//   in the Amazon EFS User Guide. You must delete the replication configuration, and
 	//   then restore the most recent backup of the failed file system (either the source
 	//   or the destination) to a new file system.
+	//
+	// [Managing Amazon Web Services Regions]: https://docs.aws.amazon.com/general/latest/gr/rande-manage.html#rande-manage-enable
+	// [Monitoring replication status]: https://docs.aws.amazon.com/efs/latest/ug/awsbackup.html#restoring-backup-efsmonitoring-replication-status.html
 	//
 	// This member is required.
 	Status ReplicationStatus
@@ -138,24 +148,33 @@ type Destination struct {
 	noSmithyDocumentSerde
 }
 
-// Describes the destination file system to create in the replication
+// Describes the new or existing destination file system for the replication
 // configuration.
 type DestinationToCreate struct {
 
-	// To create a file system that uses EFS One Zone storage, specify the name of the
+	// To create a file system that uses One Zone storage, specify the name of the
 	// Availability Zone in which to create the destination file system.
 	AvailabilityZoneName *string
 
-	// Specifies the Key Management Service (KMS) key that you want to use to encrypt
+	// The ID of the file system to use for the destination. The file system's
+	// replication overwrite replication must be disabled. If you do not provide an ID,
+	// then EFS creates a new file system for the replication destination.
+	FileSystemId *string
+
+	// Specify the Key Management Service (KMS) key that you want to use to encrypt
 	// the destination file system. If you do not specify a KMS key, Amazon EFS uses
 	// your default KMS key for Amazon EFS, /aws/elasticfilesystem . This ID can be in
 	// one of the following formats:
+	//
 	//   - Key ID - The unique identifier of the key, for example
 	//   1234abcd-12ab-34cd-56ef-1234567890ab .
+	//
 	//   - ARN - The Amazon Resource Name (ARN) for the key, for example
 	//   arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab .
+	//
 	//   - Key alias - A previously created display name for a key, for example
 	//   alias/projectKey1 .
+	//
 	//   - Key alias ARN - The ARN for a key alias, for example
 	//   arn:aws:kms:us-west-2:444455556666:alias/projectKey1 .
 	KmsKeyId *string
@@ -192,7 +211,7 @@ type FileSystemDescription struct {
 	LifeCycleState LifeCycleState
 
 	// The current number of mount targets that the file system has. For more
-	// information, see CreateMountTarget .
+	// information, see CreateMountTarget.
 	//
 	// This member is required.
 	NumberOfMountTargets int32
@@ -202,7 +221,7 @@ type FileSystemDescription struct {
 	// This member is required.
 	OwnerId *string
 
-	// The performance mode of the file system.
+	// The Performance mode of the file system.
 	//
 	// This member is required.
 	PerformanceMode PerformanceMode
@@ -226,15 +245,16 @@ type FileSystemDescription struct {
 	Tags []Tag
 
 	// The unique and consistent identifier of the Availability Zone in which the file
-	// system's One Zone storage classes exist. For example, use1-az1 is an
-	// Availability Zone ID for the us-east-1 Amazon Web Services Region, and it has
-	// the same location in every Amazon Web Services account.
+	// system is located, and is valid only for One Zone file systems. For example,
+	// use1-az1 is an Availability Zone ID for the us-east-1 Amazon Web Services
+	// Region, and it has the same location in every Amazon Web Services account.
 	AvailabilityZoneId *string
 
 	// Describes the Amazon Web Services Availability Zone in which the file system is
-	// located, and is valid only for file systems using One Zone storage classes. For
-	// more information, see Using EFS storage classes (https://docs.aws.amazon.com/efs/latest/ug/storage-classes.html)
+	// located, and is valid only for One Zone file systems. For more information, see [Using EFS storage classes]
 	// in the Amazon EFS User Guide.
+	//
+	// [Using EFS storage classes]: https://docs.aws.amazon.com/efs/latest/ug/storage-classes.html
 	AvailabilityZoneName *string
 
 	// A Boolean value that, if true, indicates that the file system is encrypted.
@@ -246,22 +266,50 @@ type FileSystemDescription struct {
 	// arn:aws:elasticfilesystem:us-west-2:1111333322228888:file-system/fs-01234567
 	FileSystemArn *string
 
+	// Describes the protection on the file system.
+	FileSystemProtection *FileSystemProtectionDescription
+
 	// The ID of an KMS key used to protect the encrypted file system.
 	KmsKeyId *string
 
 	// You can add tags to a file system, including a Name tag. For more information,
-	// see CreateFileSystem . If the file system has a Name tag, Amazon EFS returns
-	// the value in this field.
+	// see CreateFileSystem. If the file system has a Name tag, Amazon EFS returns the value in this
+	// field.
 	Name *string
 
 	// The amount of provisioned throughput, measured in MiBps, for the file system.
 	// Valid for file systems using ThroughputMode set to provisioned .
 	ProvisionedThroughputInMibps *float64
 
-	// Displays the file system's throughput mode. For more information, see
-	// Throughput modes (https://docs.aws.amazon.com/efs/latest/ug/performance.html#throughput-modes)
-	// in the Amazon EFS User Guide.
+	// Displays the file system's throughput mode. For more information, see [Throughput modes] in the
+	// Amazon EFS User Guide.
+	//
+	// [Throughput modes]: https://docs.aws.amazon.com/efs/latest/ug/performance.html#throughput-modes
 	ThroughputMode ThroughputMode
+
+	noSmithyDocumentSerde
+}
+
+// Describes the protection on a file system.
+type FileSystemProtectionDescription struct {
+
+	// The status of the file system's replication overwrite protection.
+	//
+	//   - ENABLED – The file system cannot be used as the destination file system in a
+	//   replication configuration. The file system is writeable. Replication overwrite
+	//   protection is ENABLED by default.
+	//
+	//   - DISABLED – The file system can be used as the destination file system in a
+	//   replication configuration. The file system is read-only and can only be modified
+	//   by EFS replication.
+	//
+	//   - REPLICATING – The file system is being used as the destination file system
+	//   in a replication configuration. The file system is read-only and is only
+	//   modified only by EFS replication.
+	//
+	// If the replication configuration is deleted, the file system's replication
+	// overwrite protection is re-enabled, the file system becomes writeable.
+	ReplicationOverwriteProtection ReplicationOverwriteProtection
 
 	noSmithyDocumentSerde
 }
@@ -285,6 +333,10 @@ type FileSystemSize struct {
 	// 1970-01-01T00:00:00Z.
 	Timestamp *time.Time
 
+	// The latest known metered size (in bytes) of data stored in the Archive storage
+	// class.
+	ValueInArchive *int64
+
 	// The latest known metered size (in bytes) of data stored in the Infrequent
 	// Access storage class.
 	ValueInIA *int64
@@ -296,27 +348,34 @@ type FileSystemSize struct {
 	noSmithyDocumentSerde
 }
 
-// Describes a policy used by EFS lifecycle management and EFS Intelligent-Tiering
-// that specifies when to transition files into and out of the file system's
-// Infrequent Access (IA) storage class. For more information, see EFS
-// Intelligent‐Tiering and EFS Lifecycle Management (https://docs.aws.amazon.com/efs/latest/ug/lifecycle-management-efs.html)
-// . When using the put-lifecycle-configuration CLI command or the
+// Describes a policy used by Lifecycle management that specifies when to
+// transition files into and out of storage classes. For more information, see [Managing file system storage].
+//
+// When using the put-lifecycle-configuration CLI command or the
 // PutLifecycleConfiguration API action, Amazon EFS requires that each
 // LifecyclePolicy object have only a single transition. This means that in a
 // request body, LifecyclePolicies must be structured as an array of
-// LifecyclePolicy objects, one object for each transition, TransitionToIA ,
-// TransitionToPrimaryStorageClass . For more information, see the request examples
-// in PutLifecycleConfiguration .
+// LifecyclePolicy objects, one object for each transition. For more information,
+// see the request examples in PutLifecycleConfiguration.
+//
+// [Managing file system storage]: https://docs.aws.amazon.com/efs/latest/ug/lifecycle-management-efs.html
 type LifecyclePolicy struct {
 
-	// Describes the period of time that a file is not accessed, after which it
-	// transitions to IA storage. Metadata operations such as listing the contents of a
-	// directory don't count as file access events.
-	TransitionToIA TransitionToIARules
+	// The number of days after files were last accessed in primary storage (the
+	// Standard storage class) files at which to move them to Archive storage. Metadata
+	// operations such as listing the contents of a directory don't count as file
+	// access events.
+	TransitionToArchive TransitionToArchiveRules
 
-	// Describes when to transition a file from IA storage to primary storage.
+	// The number of days after files were last accessed in primary storage (the
+	// Standard storage class) at which to move them to Infrequent Access (IA) storage.
 	// Metadata operations such as listing the contents of a directory don't count as
 	// file access events.
+	TransitionToIA TransitionToIARules
+
+	// Whether to move files back to primary (Standard) storage after they are
+	// accessed in IA or Archive storage. Metadata operations such as listing the
+	// contents of a directory don't count as file access events.
 	TransitionToPrimaryStorageClass TransitionToPrimaryStorageClassRules
 
 	noSmithyDocumentSerde
@@ -408,8 +467,8 @@ type ReplicationConfigurationDescription struct {
 	// This member is required.
 	Destinations []Destination
 
-	// The Amazon Resource Name (ARN) of the original source Amazon EFS file system in
-	// the replication configuration.
+	// The Amazon Resource Name (ARN) of the original source EFS file system in the
+	// replication configuration.
 	//
 	// This member is required.
 	OriginalSourceFileSystemArn *string
@@ -425,8 +484,7 @@ type ReplicationConfigurationDescription struct {
 	// This member is required.
 	SourceFileSystemId *string
 
-	// The Amazon Web Services Region in which the source Amazon EFS file system is
-	// located.
+	// The Amazon Web Services Region in which the source EFS file system is located.
 	//
 	// This member is required.
 	SourceFileSystemRegion *string
@@ -460,9 +518,10 @@ type RootDirectory struct {
 	// point's RootDirectory . If the RootDirectory > Path specified does not exist,
 	// EFS creates the root directory using the CreationInfo settings when a client
 	// connects to an access point. When specifying the CreationInfo , you must provide
-	// values for all properties. If you do not provide CreationInfo and the specified
-	// RootDirectory > Path does not exist, attempts to mount the file system using
-	// the access point will fail.
+	// values for all properties.
+	//
+	// If you do not provide CreationInfo and the specified RootDirectory > Path does
+	// not exist, attempts to mount the file system using the access point will fail.
 	CreationInfo *CreationInfo
 
 	// Specifies the path on the EFS file system to expose as the root directory to
