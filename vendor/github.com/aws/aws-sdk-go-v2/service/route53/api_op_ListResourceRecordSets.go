@@ -4,49 +4,71 @@ package route53
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
-	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
-	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 // Lists the resource record sets in a specified hosted zone.
-// ListResourceRecordSets returns up to 300 resource record sets at a time in ASCII
-// order, beginning at a position specified by the name and type elements. Sort
-// order ListResourceRecordSets sorts results first by DNS name with the labels
-// reversed, for example: com.example.www. Note the trailing dot, which can change
-// the sort order when the record name contains characters that appear before .
-// (decimal 46) in the ASCII table. These characters include the following: ! " #
-// $ % & ' ( ) * + , - When multiple records have the same DNS name,
-// ListResourceRecordSets sorts results by the record type. Specifying where to
-// start listing records You can use the name and type elements to specify the
-// resource record set that the list begins with: If you do not specify Name or
-// Type The results begin with the first resource record set that the hosted zone
-// contains. If you specify Name but not Type The results begin with the first
-// resource record set in the list whose name is greater than or equal to Name . If
-// you specify Type but not Name Amazon Route 53 returns the InvalidInput error.
+//
+// ListResourceRecordSets returns up to 300 resource record sets at a time in
+// ASCII order, beginning at a position specified by the name and type elements.
+//
+// # Sort order
+//
+// ListResourceRecordSets sorts results first by DNS name with the labels
+// reversed, for example:
+//
+//	com.example.www.
+//
+// Note the trailing dot, which can change the sort order when the record name
+// contains characters that appear before . (decimal 46) in the ASCII table. These
+// characters include the following: ! " # $ % & ' ( ) * + , -
+//
+// When multiple records have the same DNS name, ListResourceRecordSets sorts
+// results by the record type.
+//
+// # Specifying where to start listing records
+//
+// You can use the name and type elements to specify the resource record set that
+// the list begins with:
+//
+// If you do not specify Name or Type The results begin with the first resource
+// record set that the hosted zone contains.
+//
+// If you specify Name but not Type The results begin with the first resource
+// record set in the list whose name is greater than or equal to Name .
+//
+// If you specify Type but not Name Amazon Route 53 returns the InvalidInput error.
+//
 // If you specify both Name and Type The results begin with the first resource
 // record set in the list whose name is greater than or equal to Name , and whose
-// type is greater than or equal to Type . Resource record sets that are PENDING
+// type is greater than or equal to Type .
+//
+// # Resource record sets that are PENDING
+//
 // This action returns the most current version of the records. This includes
 // records that are PENDING , and that are not yet available on all Route 53 DNS
-// servers. Changing resource record sets To ensure that you get an accurate
-// listing of the resource record sets for a hosted zone at a point in time, do not
-// submit a ChangeResourceRecordSets request while you're paging through the
-// results of a ListResourceRecordSets request. If you do, some pages may display
-// results without the latest changes while other pages display results with the
-// latest changes. Displaying the next page of results If a ListResourceRecordSets
-// command returns more than one page of results, the value of IsTruncated is true
-// . To display the next page of results, get the values of NextRecordName ,
-// NextRecordType , and NextRecordIdentifier (if any) from the response. Then
-// submit another ListResourceRecordSets request, and specify those values for
-// StartRecordName , StartRecordType , and StartRecordIdentifier .
+// servers.
+//
+// # Changing resource record sets
+//
+// To ensure that you get an accurate listing of the resource record sets for a
+// hosted zone at a point in time, do not submit a ChangeResourceRecordSets
+// request while you're paging through the results of a ListResourceRecordSets
+// request. If you do, some pages may display results without the latest changes
+// while other pages display results with the latest changes.
+//
+// # Displaying the next page of results
+//
+// If a ListResourceRecordSets command returns more than one page of results, the
+// value of IsTruncated is true . To display the next page of results, get the
+// values of NextRecordName , NextRecordType , and NextRecordIdentifier (if any)
+// from the response. Then submit another ListResourceRecordSets request, and
+// specify those values for StartRecordName , StartRecordType , and
+// StartRecordIdentifier .
 func (c *Client) ListResourceRecordSets(ctx context.Context, params *ListResourceRecordSetsInput, optFns ...func(*Options)) (*ListResourceRecordSetsOutput, error) {
 	if params == nil {
 		params = &ListResourceRecordSetsInput{}
@@ -80,7 +102,7 @@ type ListResourceRecordSetsInput struct {
 	// resource record sets.
 	MaxItems *int32
 
-	// Resource record sets that have a routing policy other than simple: If results
+	//  Resource record sets that have a routing policy other than simple: If results
 	// were truncated for a given DNS name and type, specify the value of
 	// NextRecordIdentifier from the previous response to get the next resource record
 	// set that has the current DNS name and type.
@@ -91,19 +113,31 @@ type ListResourceRecordSetsInput struct {
 	// the first resource record set that has a name greater than the value of name .
 	StartRecordName *string
 
-	// The type of resource record set to begin the record listing from. Valid values
-	// for basic resource record sets: A | AAAA | CAA | CNAME | MX | NAPTR | NS | PTR
-	// | SOA | SPF | SRV | TXT Values for weighted, latency, geolocation, and failover
-	// resource record sets: A | AAAA | CAA | CNAME | MX | NAPTR | PTR | SPF | SRV |
-	// TXT Values for alias resource record sets:
+	// The type of resource record set to begin the record listing from.
+	//
+	// Valid values for basic resource record sets: A | AAAA | CAA | CNAME | MX | NAPTR
+	// | NS | PTR | SOA | SPF | SRV | TXT
+	//
+	// Values for weighted, latency, geolocation, and failover resource record sets: A
+	// | AAAA | CAA | CNAME | MX | NAPTR | PTR | SPF | SRV | TXT
+	//
+	// Values for alias resource record sets:
+	//
 	//   - API Gateway custom regional API or edge-optimized API: A
+	//
 	//   - CloudFront distribution: A or AAAA
+	//
 	//   - Elastic Beanstalk environment that has a regionalized subdomain: A
+	//
 	//   - Elastic Load Balancing load balancer: A | AAAA
+	//
 	//   - S3 bucket: A
+	//
 	//   - VPC interface VPC endpoint: A
+	//
 	//   - Another resource record set in this hosted zone: The type of the resource
 	//   record set that the alias references.
+	//
 	// Constraint: Specifying type without specifying name returns an InvalidInput
 	// error.
 	StartRecordType types.RRType
@@ -131,19 +165,24 @@ type ListResourceRecordSetsOutput struct {
 	// This member is required.
 	ResourceRecordSets []types.ResourceRecordSet
 
-	// Resource record sets that have a routing policy other than simple: If results
+	//  Resource record sets that have a routing policy other than simple: If results
 	// were truncated for a given DNS name and type, the value of SetIdentifier for
-	// the next resource record set that has the current DNS name and type. For
-	// information about routing policies, see Choosing a Routing Policy (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html)
-	// in the Amazon Route 53 Developer Guide.
+	// the next resource record set that has the current DNS name and type.
+	//
+	// For information about routing policies, see [Choosing a Routing Policy] in the Amazon Route 53 Developer
+	// Guide.
+	//
+	// [Choosing a Routing Policy]: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
 	NextRecordIdentifier *string
 
-	// If the results were truncated, the name of the next record in the list. This
-	// element is present only if IsTruncated is true.
+	// If the results were truncated, the name of the next record in the list.
+	//
+	// This element is present only if IsTruncated is true.
 	NextRecordName *string
 
-	// If the results were truncated, the type of the next record in the list. This
-	// element is present only if IsTruncated is true.
+	// If the results were truncated, the type of the next record in the list.
+	//
+	// This element is present only if IsTruncated is true.
 	NextRecordType types.RRType
 
 	// Metadata pertaining to the operation's result.
@@ -153,6 +192,9 @@ type ListResourceRecordSetsOutput struct {
 }
 
 func (c *Client) addOperationListResourceRecordSetsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
+		return err
+	}
 	err = stack.Serialize.Add(&awsRestxml_serializeOpListResourceRecordSets{}, middleware.After)
 	if err != nil {
 		return err
@@ -161,34 +203,38 @@ func (c *Client) addOperationListResourceRecordSetsMiddlewares(stack *middleware
 	if err != nil {
 		return err
 	}
+	if err := addProtocolFinalizerMiddlewares(stack, options, "ListResourceRecordSets"); err != nil {
+		return fmt.Errorf("add protocol finalizers: %v", err)
+	}
+
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddClientRequestIDMiddleware(stack); err != nil {
+	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddComputeContentLengthMiddleware(stack); err != nil {
+	if err = addComputeContentLength(stack); err != nil {
 		return err
 	}
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = v4.AddComputePayloadSHA256Middleware(stack); err != nil {
+	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetryMiddlewares(stack, options); err != nil {
+	if err = addRetry(stack, options); err != nil {
 		return err
 	}
-	if err = addHTTPSignerV4Middleware(stack, options); err != nil {
+	if err = addRawResponseToMetadata(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRawResponseToMetadata(stack); err != nil {
+	if err = addRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
+	if err = addSpanRetryLoop(stack, options); err != nil {
 		return err
 	}
 	if err = addClientUserAgent(stack, options); err != nil {
@@ -200,7 +246,13 @@ func (c *Client) addOperationListResourceRecordSetsMiddlewares(stack *middleware
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addListResourceRecordSetsResolveEndpointMiddleware(stack, options); err != nil {
+	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addTimeOffsetBuild(stack, c); err != nil {
+		return err
+	}
+	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
 	if err = addOpListResourceRecordSetsValidationMiddleware(stack); err != nil {
@@ -209,7 +261,7 @@ func (c *Client) addOperationListResourceRecordSetsMiddlewares(stack *middleware
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opListResourceRecordSets(options.Region), middleware.Before); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
+	if err = addRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -224,7 +276,19 @@ func (c *Client) addOperationListResourceRecordSetsMiddlewares(stack *middleware
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
-	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
+	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
+	}
+	if err = addSpanInitializeStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanInitializeEnd(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil
@@ -234,130 +298,6 @@ func newServiceMetadataMiddleware_opListResourceRecordSets(region string) *awsmi
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
-		SigningName:   "route53",
 		OperationName: "ListResourceRecordSets",
 	}
-}
-
-type opListResourceRecordSetsResolveEndpointMiddleware struct {
-	EndpointResolver EndpointResolverV2
-	BuiltInResolver  builtInParameterResolver
-}
-
-func (*opListResourceRecordSetsResolveEndpointMiddleware) ID() string {
-	return "ResolveEndpointV2"
-}
-
-func (m *opListResourceRecordSetsResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
-	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
-) {
-	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
-		return next.HandleSerialize(ctx, in)
-	}
-
-	req, ok := in.Request.(*smithyhttp.Request)
-	if !ok {
-		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
-	}
-
-	if m.EndpointResolver == nil {
-		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
-	}
-
-	params := EndpointParameters{}
-
-	m.BuiltInResolver.ResolveBuiltIns(&params)
-
-	var resolvedEndpoint smithyendpoints.Endpoint
-	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
-	if err != nil {
-		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
-	}
-
-	req.URL = &resolvedEndpoint.URI
-
-	for k := range resolvedEndpoint.Headers {
-		req.Header.Set(
-			k,
-			resolvedEndpoint.Headers.Get(k),
-		)
-	}
-
-	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
-	if err != nil {
-		var nfe *internalauth.NoAuthenticationSchemesFoundError
-		if errors.As(err, &nfe) {
-			// if no auth scheme is found, default to sigv4
-			signingName := "route53"
-			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-
-		}
-		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
-		if errors.As(err, &ue) {
-			return out, metadata, fmt.Errorf(
-				"This operation requests signer version(s) %v but the client only supports %v",
-				ue.UnsupportedSchemes,
-				internalauth.SupportedSchemes,
-			)
-		}
-	}
-
-	for _, authScheme := range authSchemes {
-		switch authScheme.(type) {
-		case *internalauth.AuthenticationSchemeV4:
-			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
-			var signingName, signingRegion string
-			if v4Scheme.SigningName == nil {
-				signingName = "route53"
-			} else {
-				signingName = *v4Scheme.SigningName
-			}
-			if v4Scheme.SigningRegion == nil {
-				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
-			} else {
-				signingRegion = *v4Scheme.SigningRegion
-			}
-			if v4Scheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-			break
-		case *internalauth.AuthenticationSchemeV4A:
-			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
-			if v4aScheme.SigningName == nil {
-				v4aScheme.SigningName = aws.String("route53")
-			}
-			if v4aScheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
-			break
-		case *internalauth.AuthenticationSchemeNone:
-			break
-		}
-	}
-
-	return next.HandleSerialize(ctx, in)
-}
-
-func addListResourceRecordSetsResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
-	return stack.Serialize.Insert(&opListResourceRecordSetsResolveEndpointMiddleware{
-		EndpointResolver: options.EndpointResolverV2,
-		BuiltInResolver: &builtInResolver{
-			Region:       options.Region,
-			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
-			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
-			Endpoint:     options.BaseEndpoint,
-		},
-	}, "ResolveEndpoint", middleware.After)
 }
