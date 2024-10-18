@@ -4,52 +4,65 @@ package route53
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
-	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
-	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 // Retrieves a list of your hosted zones in lexicographic order. The response
 // includes a HostedZones child element for each hosted zone created by the
-// current Amazon Web Services account. ListHostedZonesByName sorts hosted zones
-// by name with the labels reversed. For example: com.example.www. Note the
-// trailing dot, which can change the sort order in some circumstances. If the
-// domain name includes escape characters or Punycode, ListHostedZonesByName
+// current Amazon Web Services account.
+//
+// ListHostedZonesByName sorts hosted zones by name with the labels reversed. For
+// example:
+//
+//	com.example.www.
+//
+// Note the trailing dot, which can change the sort order in some circumstances.
+//
+// If the domain name includes escape characters or Punycode, ListHostedZonesByName
 // alphabetizes the domain name using the escaped or Punycoded value, which is the
 // format that Amazon Route 53 saves in its database. For example, to create a
 // hosted zone for exämple.com, you specify ex\344mple.com for the domain name.
-// ListHostedZonesByName alphabetizes it as: com.ex\344mple. The labels are
-// reversed and alphabetized using the escaped value. For more information about
-// valid domain name formats, including internationalized domain names, see DNS
-// Domain Name Format (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html)
-// in the Amazon Route 53 Developer Guide. Route 53 returns up to 100 items in each
-// response. If you have a lot of hosted zones, use the MaxItems parameter to list
-// them in groups of up to 100. The response includes values that help navigate
-// from one group of MaxItems hosted zones to the next:
+// ListHostedZonesByName alphabetizes it as:
+//
+//	com.ex\344mple.
+//
+// The labels are reversed and alphabetized using the escaped value. For more
+// information about valid domain name formats, including internationalized domain
+// names, see [DNS Domain Name Format]in the Amazon Route 53 Developer Guide.
+//
+// Route 53 returns up to 100 items in each response. If you have a lot of hosted
+// zones, use the MaxItems parameter to list them in groups of up to 100. The
+// response includes values that help navigate from one group of MaxItems hosted
+// zones to the next:
+//
 //   - The DNSName and HostedZoneId elements in the response contain the values, if
 //     any, specified for the dnsname and hostedzoneid parameters in the request that
 //     produced the current response.
+//
 //   - The MaxItems element in the response contains the value, if any, that you
 //     specified for the maxitems parameter in the request that produced the current
 //     response.
+//
 //   - If the value of IsTruncated in the response is true, there are more hosted
-//     zones associated with the current Amazon Web Services account. If IsTruncated
-//     is false, this response includes the last hosted zone that is associated with
-//     the current account. The NextDNSName element and NextHostedZoneId elements are
-//     omitted from the response.
-//   - The NextDNSName and NextHostedZoneId elements in the response contain the
-//     domain name and the hosted zone ID of the next hosted zone that is associated
-//     with the current Amazon Web Services account. If you want to list more hosted
-//     zones, make another call to ListHostedZonesByName , and specify the value of
-//     NextDNSName and NextHostedZoneId in the dnsname and hostedzoneid parameters,
-//     respectively.
+//     zones associated with the current Amazon Web Services account.
+//
+// If IsTruncated is false, this response includes the last hosted zone that is
+//
+//	associated with the current account. The NextDNSName element and
+//	NextHostedZoneId elements are omitted from the response.
+//
+//	- The NextDNSName and NextHostedZoneId elements in the response contain the
+//	domain name and the hosted zone ID of the next hosted zone that is associated
+//	with the current Amazon Web Services account. If you want to list more hosted
+//	zones, make another call to ListHostedZonesByName , and specify the value of
+//	NextDNSName and NextHostedZoneId in the dnsname and hostedzoneid parameters,
+//	respectively.
+//
+// [DNS Domain Name Format]: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html
 func (c *Client) ListHostedZonesByName(ctx context.Context, params *ListHostedZonesByNameInput, optFns ...func(*Options)) (*ListHostedZonesByNameOutput, error) {
 	if params == nil {
 		params = &ListHostedZonesByNameInput{}
@@ -79,12 +92,13 @@ type ListHostedZonesByNameInput struct {
 	DNSName *string
 
 	// (Optional) For your first request to ListHostedZonesByName , do not include the
-	// hostedzoneid parameter. If you have more hosted zones than the value of maxitems
-	// , ListHostedZonesByName returns only the first maxitems hosted zones. To get
-	// the next group of maxitems hosted zones, submit another request to
-	// ListHostedZonesByName and include both dnsname and hostedzoneid parameters. For
-	// the value of hostedzoneid , specify the value of the NextHostedZoneId element
-	// from the previous response.
+	// hostedzoneid parameter.
+	//
+	// If you have more hosted zones than the value of maxitems , ListHostedZonesByName
+	// returns only the first maxitems hosted zones. To get the next group of maxitems
+	// hosted zones, submit another request to ListHostedZonesByName and include both
+	// dnsname and hostedzoneid parameters. For the value of hostedzoneid , specify the
+	// value of the NextHostedZoneId element from the previous response.
 	HostedZoneId *string
 
 	// The maximum number of hosted zones to be included in the response body for this
@@ -130,15 +144,17 @@ type ListHostedZonesByNameOutput struct {
 	// If IsTruncated is true, the value of NextDNSName is the name of the first
 	// hosted zone in the next group of maxitems hosted zones. Call
 	// ListHostedZonesByName again and specify the value of NextDNSName and
-	// NextHostedZoneId in the dnsname and hostedzoneid parameters, respectively. This
-	// element is present only if IsTruncated is true .
+	// NextHostedZoneId in the dnsname and hostedzoneid parameters, respectively.
+	//
+	// This element is present only if IsTruncated is true .
 	NextDNSName *string
 
 	// If IsTruncated is true , the value of NextHostedZoneId identifies the first
 	// hosted zone in the next group of maxitems hosted zones. Call
 	// ListHostedZonesByName again and specify the value of NextDNSName and
-	// NextHostedZoneId in the dnsname and hostedzoneid parameters, respectively. This
-	// element is present only if IsTruncated is true .
+	// NextHostedZoneId in the dnsname and hostedzoneid parameters, respectively.
+	//
+	// This element is present only if IsTruncated is true .
 	NextHostedZoneId *string
 
 	// Metadata pertaining to the operation's result.
@@ -148,6 +164,9 @@ type ListHostedZonesByNameOutput struct {
 }
 
 func (c *Client) addOperationListHostedZonesByNameMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
+		return err
+	}
 	err = stack.Serialize.Add(&awsRestxml_serializeOpListHostedZonesByName{}, middleware.After)
 	if err != nil {
 		return err
@@ -156,34 +175,38 @@ func (c *Client) addOperationListHostedZonesByNameMiddlewares(stack *middleware.
 	if err != nil {
 		return err
 	}
+	if err := addProtocolFinalizerMiddlewares(stack, options, "ListHostedZonesByName"); err != nil {
+		return fmt.Errorf("add protocol finalizers: %v", err)
+	}
+
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddClientRequestIDMiddleware(stack); err != nil {
+	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddComputeContentLengthMiddleware(stack); err != nil {
+	if err = addComputeContentLength(stack); err != nil {
 		return err
 	}
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = v4.AddComputePayloadSHA256Middleware(stack); err != nil {
+	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetryMiddlewares(stack, options); err != nil {
+	if err = addRetry(stack, options); err != nil {
 		return err
 	}
-	if err = addHTTPSignerV4Middleware(stack, options); err != nil {
+	if err = addRawResponseToMetadata(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRawResponseToMetadata(stack); err != nil {
+	if err = addRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
+	if err = addSpanRetryLoop(stack, options); err != nil {
 		return err
 	}
 	if err = addClientUserAgent(stack, options); err != nil {
@@ -195,13 +218,19 @@ func (c *Client) addOperationListHostedZonesByNameMiddlewares(stack *middleware.
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addListHostedZonesByNameResolveEndpointMiddleware(stack, options); err != nil {
+	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addTimeOffsetBuild(stack, c); err != nil {
+		return err
+	}
+	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opListHostedZonesByName(options.Region), middleware.Before); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
+	if err = addRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -216,7 +245,19 @@ func (c *Client) addOperationListHostedZonesByNameMiddlewares(stack *middleware.
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
-	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
+	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
+	}
+	if err = addSpanInitializeStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanInitializeEnd(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil
@@ -226,130 +267,6 @@ func newServiceMetadataMiddleware_opListHostedZonesByName(region string) *awsmid
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
-		SigningName:   "route53",
 		OperationName: "ListHostedZonesByName",
 	}
-}
-
-type opListHostedZonesByNameResolveEndpointMiddleware struct {
-	EndpointResolver EndpointResolverV2
-	BuiltInResolver  builtInParameterResolver
-}
-
-func (*opListHostedZonesByNameResolveEndpointMiddleware) ID() string {
-	return "ResolveEndpointV2"
-}
-
-func (m *opListHostedZonesByNameResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
-	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
-) {
-	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
-		return next.HandleSerialize(ctx, in)
-	}
-
-	req, ok := in.Request.(*smithyhttp.Request)
-	if !ok {
-		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
-	}
-
-	if m.EndpointResolver == nil {
-		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
-	}
-
-	params := EndpointParameters{}
-
-	m.BuiltInResolver.ResolveBuiltIns(&params)
-
-	var resolvedEndpoint smithyendpoints.Endpoint
-	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
-	if err != nil {
-		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
-	}
-
-	req.URL = &resolvedEndpoint.URI
-
-	for k := range resolvedEndpoint.Headers {
-		req.Header.Set(
-			k,
-			resolvedEndpoint.Headers.Get(k),
-		)
-	}
-
-	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
-	if err != nil {
-		var nfe *internalauth.NoAuthenticationSchemesFoundError
-		if errors.As(err, &nfe) {
-			// if no auth scheme is found, default to sigv4
-			signingName := "route53"
-			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-
-		}
-		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
-		if errors.As(err, &ue) {
-			return out, metadata, fmt.Errorf(
-				"This operation requests signer version(s) %v but the client only supports %v",
-				ue.UnsupportedSchemes,
-				internalauth.SupportedSchemes,
-			)
-		}
-	}
-
-	for _, authScheme := range authSchemes {
-		switch authScheme.(type) {
-		case *internalauth.AuthenticationSchemeV4:
-			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
-			var signingName, signingRegion string
-			if v4Scheme.SigningName == nil {
-				signingName = "route53"
-			} else {
-				signingName = *v4Scheme.SigningName
-			}
-			if v4Scheme.SigningRegion == nil {
-				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
-			} else {
-				signingRegion = *v4Scheme.SigningRegion
-			}
-			if v4Scheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-			break
-		case *internalauth.AuthenticationSchemeV4A:
-			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
-			if v4aScheme.SigningName == nil {
-				v4aScheme.SigningName = aws.String("route53")
-			}
-			if v4aScheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
-			break
-		case *internalauth.AuthenticationSchemeNone:
-			break
-		}
-	}
-
-	return next.HandleSerialize(ctx, in)
-}
-
-func addListHostedZonesByNameResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
-	return stack.Serialize.Insert(&opListHostedZonesByNameResolveEndpointMiddleware{
-		EndpointResolver: options.EndpointResolverV2,
-		BuiltInResolver: &builtInResolver{
-			Region:       options.Region,
-			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
-			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
-			Endpoint:     options.BaseEndpoint,
-		},
-	}, "ResolveEndpoint", middleware.After)
 }
