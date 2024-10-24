@@ -4,31 +4,34 @@ package ec2
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
-	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 	"time"
 )
 
 // Creates an EBS volume that can be attached to an instance in the same
-// Availability Zone. You can create a new empty volume or restore a volume from an
-// EBS snapshot. Any Amazon Web Services Marketplace product codes from the
-// snapshot are propagated to the volume. You can create encrypted volumes.
-// Encrypted volumes must be attached to instances that support Amazon EBS
-// encryption. Volumes that are created from encrypted snapshots are also
-// automatically encrypted. For more information, see Amazon EBS encryption (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html)
-// in the Amazon Elastic Compute Cloud User Guide. You can tag your volumes during
-// creation. For more information, see Tag your Amazon EC2 resources (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html)
-// in the Amazon Elastic Compute Cloud User Guide. For more information, see
-// Create an Amazon EBS volume (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-volume.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// Availability Zone.
+//
+// You can create a new empty volume or restore a volume from an EBS snapshot. Any
+// Amazon Web Services Marketplace product codes from the snapshot are propagated
+// to the volume.
+//
+// You can create encrypted volumes. Encrypted volumes must be attached to
+// instances that support Amazon EBS encryption. Volumes that are created from
+// encrypted snapshots are also automatically encrypted. For more information, see [Amazon EBS encryption]
+// in the Amazon EBS User Guide.
+//
+// You can tag your volumes during creation. For more information, see [Tag your Amazon EC2 resources] in the
+// Amazon EC2 User Guide.
+//
+// For more information, see [Create an Amazon EBS volume] in the Amazon EBS User Guide.
+//
+// [Amazon EBS encryption]: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-encryption.html
+// [Create an Amazon EBS volume]: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-creating-volume.html
+// [Tag your Amazon EC2 resources]: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
 func (c *Client) CreateVolume(ctx context.Context, params *CreateVolumeInput, optFns ...func(*Options)) (*CreateVolumeOutput, error) {
 	if params == nil {
 		params = &CreateVolumeInput{}
@@ -53,8 +56,9 @@ type CreateVolumeInput struct {
 	AvailabilityZone *string
 
 	// Unique, case-sensitive identifier that you provide to ensure the idempotency of
-	// the request. For more information, see Ensure Idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html)
-	// .
+	// the request. For more information, see [Ensure Idempotency].
+	//
+	// [Ensure Idempotency]: https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html
 	ClientToken *string
 
 	// Checks whether you have the required permissions for the action, without
@@ -66,62 +70,91 @@ type CreateVolumeInput struct {
 	// Indicates whether the volume should be encrypted. The effect of setting the
 	// encryption state to true depends on the volume origin (new or from a snapshot),
 	// starting encryption state, ownership, and whether encryption by default is
-	// enabled. For more information, see Encryption by default (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html#encryption-by-default)
-	// in the Amazon Elastic Compute Cloud User Guide. Encrypted Amazon EBS volumes
-	// must be attached to instances that support Amazon EBS encryption. For more
-	// information, see Supported instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html#EBSEncryption_supported_instances)
-	// .
+	// enabled. For more information, see [Encryption by default]in the Amazon EBS User Guide.
+	//
+	// Encrypted Amazon EBS volumes must be attached to instances that support Amazon
+	// EBS encryption. For more information, see [Supported instance types].
+	//
+	// [Supported instance types]: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-encryption-requirements.html#ebs-encryption_supported_instances
+	// [Encryption by default]: https://docs.aws.amazon.com/ebs/latest/userguide/work-with-ebs-encr.html#encryption-by-default
 	Encrypted *bool
 
 	// The number of I/O operations per second (IOPS). For gp3 , io1 , and io2
 	// volumes, this represents the number of IOPS that are provisioned for the volume.
 	// For gp2 volumes, this represents the baseline performance of the volume and the
-	// rate at which the volume accumulates I/O credits for bursting. The following are
-	// the supported values for each volume type:
-	//   - gp3 : 3,000-16,000 IOPS
-	//   - io1 : 100-64,000 IOPS
-	//   - io2 : 100-64,000 IOPS
-	// io1 and io2 volumes support up to 64,000 IOPS only on Instances built on the
-	// Nitro System (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances)
-	// . Other instance families support performance up to 32,000 IOPS. This parameter
-	// is required for io1 and io2 volumes. The default for gp3 volumes is 3,000 IOPS.
-	// This parameter is not supported for gp2 , st1 , sc1 , or standard volumes.
+	// rate at which the volume accumulates I/O credits for bursting.
+	//
+	// The following are the supported values for each volume type:
+	//
+	//   - gp3 : 3,000 - 16,000 IOPS
+	//
+	//   - io1 : 100 - 64,000 IOPS
+	//
+	//   - io2 : 100 - 256,000 IOPS
+	//
+	// For io2 volumes, you can achieve up to 256,000 IOPS on [instances built on the Nitro System]. On other instances,
+	// you can achieve performance up to 32,000 IOPS.
+	//
+	// This parameter is required for io1 and io2 volumes. The default for gp3 volumes
+	// is 3,000 IOPS. This parameter is not supported for gp2 , st1 , sc1 , or standard
+	// volumes.
+	//
+	// [instances built on the Nitro System]: https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-nitro-instances.html
 	Iops *int32
 
-	// The identifier of the Key Management Service (KMS) KMS key to use for Amazon
-	// EBS encryption. If this parameter is not specified, your KMS key for Amazon EBS
-	// is used. If KmsKeyId is specified, the encrypted state must be true . You can
-	// specify the KMS key using any of the following:
+	// The identifier of the KMS key to use for Amazon EBS encryption. If this
+	// parameter is not specified, your KMS key for Amazon EBS is used. If KmsKeyId is
+	// specified, the encrypted state must be true .
+	//
+	// You can specify the KMS key using any of the following:
+	//
 	//   - Key ID. For example, 1234abcd-12ab-34cd-56ef-1234567890ab.
+	//
 	//   - Key alias. For example, alias/ExampleAlias.
+	//
 	//   - Key ARN. For example,
 	//   arn:aws:kms:us-east-1:012345678910:key/1234abcd-12ab-34cd-56ef-1234567890ab.
+	//
 	//   - Alias ARN. For example,
 	//   arn:aws:kms:us-east-1:012345678910:alias/ExampleAlias.
+	//
 	// Amazon Web Services authenticates the KMS key asynchronously. Therefore, if you
 	// specify an ID, alias, or ARN that is not valid, the action can appear to
 	// complete, but eventually fails.
 	KmsKeyId *string
 
 	// Indicates whether to enable Amazon EBS Multi-Attach. If you enable
-	// Multi-Attach, you can attach the volume to up to 16 Instances built on the
-	// Nitro System (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances)
-	// in the same Availability Zone. This parameter is supported with io1 and io2
-	// volumes only. For more information, see Amazon EBS Multi-Attach (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volumes-multi.html)
-	// in the Amazon Elastic Compute Cloud User Guide.
+	// Multi-Attach, you can attach the volume to up to 16 [Instances built on the Nitro System]in the same Availability
+	// Zone. This parameter is supported with io1 and io2 volumes only. For more
+	// information, see [Amazon EBS Multi-Attach]in the Amazon EBS User Guide.
+	//
+	// [Instances built on the Nitro System]: https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-nitro-instances.html
+	// [Amazon EBS Multi-Attach]: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes-multi.html
 	MultiAttachEnabled *bool
 
-	// The Amazon Resource Name (ARN) of the Outpost.
+	// The Amazon Resource Name (ARN) of the Outpost on which to create the volume.
+	//
+	// If you intend to use a volume with an instance running on an outpost, then you
+	// must create the volume on the same outpost as the instance. You can't use a
+	// volume created in an Amazon Web Services Region with an instance on an Amazon
+	// Web Services outpost, or the other way around.
 	OutpostArn *string
 
 	// The size of the volume, in GiBs. You must specify either a snapshot ID or a
 	// volume size. If you specify a snapshot, the default is the snapshot size. You
-	// can specify a volume size that is equal to or larger than the snapshot size. The
-	// following are the supported volumes sizes for each volume type:
-	//   - gp2 and gp3 : 1-16,384
-	//   - io1 and io2 : 4-16,384
-	//   - st1 and sc1 : 125-16,384
-	//   - standard : 1-1,024
+	// can specify a volume size that is equal to or larger than the snapshot size.
+	//
+	// The following are the supported volumes sizes for each volume type:
+	//
+	//   - gp2 and gp3 : 1 - 16,384 GiB
+	//
+	//   - io1 : 4 - 16,384 GiB
+	//
+	//   - io2 : 4 - 65,536 GiB
+	//
+	//   - st1 and sc1 : 125 - 16,384 GiB
+	//
+	//   - standard : 1 - 1024 GiB
 	Size *int32
 
 	// The snapshot from which to create the volume. You must specify either a
@@ -131,20 +164,33 @@ type CreateVolumeInput struct {
 	// The tags to apply to the volume during creation.
 	TagSpecifications []types.TagSpecification
 
-	// The throughput to provision for a volume, with a maximum of 1,000 MiB/s. This
-	// parameter is valid only for gp3 volumes. Valid Range: Minimum value of 125.
-	// Maximum value of 1000.
+	// The throughput to provision for a volume, with a maximum of 1,000 MiB/s.
+	//
+	// This parameter is valid only for gp3 volumes.
+	//
+	// Valid Range: Minimum value of 125. Maximum value of 1000.
 	Throughput *int32
 
 	// The volume type. This parameter can be one of the following values:
+	//
 	//   - General Purpose SSD: gp2 | gp3
+	//
 	//   - Provisioned IOPS SSD: io1 | io2
+	//
 	//   - Throughput Optimized HDD: st1
+	//
 	//   - Cold HDD: sc1
+	//
 	//   - Magnetic: standard
+	//
 	// Throughput Optimized HDD ( st1 ) and Cold HDD ( sc1 ) volumes can't be used as
-	// boot volumes. For more information, see Amazon EBS volume types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html)
-	// in the Amazon Elastic Compute Cloud User Guide. Default: gp2
+	// boot volumes.
+	//
+	// For more information, see [Amazon EBS volume types] in the Amazon EBS User Guide.
+	//
+	// Default: gp2
+	//
+	// [Amazon EBS volume types]: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html
 	VolumeType types.VolumeType
 
 	noSmithyDocumentSerde
@@ -153,6 +199,8 @@ type CreateVolumeInput struct {
 // Describes a volume.
 type CreateVolumeOutput struct {
 
+	// This parameter is not returned by CreateVolume.
+	//
 	// Information about the volume attachments.
 	Attachments []types.VolumeAttachment
 
@@ -165,6 +213,8 @@ type CreateVolumeOutput struct {
 	// Indicates whether the volume is encrypted.
 	Encrypted *bool
 
+	// This parameter is not returned by CreateVolume.
+	//
 	// Indicates whether the volume was created using fast snapshot restore.
 	FastRestored *bool
 
@@ -174,8 +224,8 @@ type CreateVolumeOutput struct {
 	// rate at which the volume accumulates I/O credits for bursting.
 	Iops *int32
 
-	// The Amazon Resource Name (ARN) of the Key Management Service (KMS) KMS key that
-	// was used to protect the volume encryption key for the volume.
+	// The Amazon Resource Name (ARN) of the KMS key that was used to protect the
+	// volume encryption key for the volume.
 	KmsKeyId *string
 
 	// Indicates whether Amazon EBS Multi-Attach is enabled.
@@ -190,6 +240,8 @@ type CreateVolumeOutput struct {
 	// The snapshot from which the volume was created, if applicable.
 	SnapshotId *string
 
+	// This parameter is not returned by CreateVolume.
+	//
 	// Reserved for future use.
 	SseType types.SSEType
 
@@ -215,6 +267,9 @@ type CreateVolumeOutput struct {
 }
 
 func (c *Client) addOperationCreateVolumeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
+		return err
+	}
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateVolume{}, middleware.After)
 	if err != nil {
 		return err
@@ -223,34 +278,38 @@ func (c *Client) addOperationCreateVolumeMiddlewares(stack *middleware.Stack, op
 	if err != nil {
 		return err
 	}
+	if err := addProtocolFinalizerMiddlewares(stack, options, "CreateVolume"); err != nil {
+		return fmt.Errorf("add protocol finalizers: %v", err)
+	}
+
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddClientRequestIDMiddleware(stack); err != nil {
+	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddComputeContentLengthMiddleware(stack); err != nil {
+	if err = addComputeContentLength(stack); err != nil {
 		return err
 	}
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = v4.AddComputePayloadSHA256Middleware(stack); err != nil {
+	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetryMiddlewares(stack, options); err != nil {
+	if err = addRetry(stack, options); err != nil {
 		return err
 	}
-	if err = addHTTPSignerV4Middleware(stack, options); err != nil {
+	if err = addRawResponseToMetadata(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRawResponseToMetadata(stack); err != nil {
+	if err = addRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
+	if err = addSpanRetryLoop(stack, options); err != nil {
 		return err
 	}
 	if err = addClientUserAgent(stack, options); err != nil {
@@ -262,7 +321,13 @@ func (c *Client) addOperationCreateVolumeMiddlewares(stack *middleware.Stack, op
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addCreateVolumeResolveEndpointMiddleware(stack, options); err != nil {
+	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addTimeOffsetBuild(stack, c); err != nil {
+		return err
+	}
+	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
 	if err = addIdempotencyToken_opCreateVolumeMiddleware(stack, options); err != nil {
@@ -274,7 +339,7 @@ func (c *Client) addOperationCreateVolumeMiddlewares(stack *middleware.Stack, op
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opCreateVolume(options.Region), middleware.Before); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
+	if err = addRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -286,7 +351,19 @@ func (c *Client) addOperationCreateVolumeMiddlewares(stack *middleware.Stack, op
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
-	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
+	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
+	}
+	if err = addSpanInitializeStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanInitializeEnd(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil
@@ -329,130 +406,6 @@ func newServiceMetadataMiddleware_opCreateVolume(region string) *awsmiddleware.R
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
-		SigningName:   "ec2",
 		OperationName: "CreateVolume",
 	}
-}
-
-type opCreateVolumeResolveEndpointMiddleware struct {
-	EndpointResolver EndpointResolverV2
-	BuiltInResolver  builtInParameterResolver
-}
-
-func (*opCreateVolumeResolveEndpointMiddleware) ID() string {
-	return "ResolveEndpointV2"
-}
-
-func (m *opCreateVolumeResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
-	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
-) {
-	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
-		return next.HandleSerialize(ctx, in)
-	}
-
-	req, ok := in.Request.(*smithyhttp.Request)
-	if !ok {
-		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
-	}
-
-	if m.EndpointResolver == nil {
-		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
-	}
-
-	params := EndpointParameters{}
-
-	m.BuiltInResolver.ResolveBuiltIns(&params)
-
-	var resolvedEndpoint smithyendpoints.Endpoint
-	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
-	if err != nil {
-		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
-	}
-
-	req.URL = &resolvedEndpoint.URI
-
-	for k := range resolvedEndpoint.Headers {
-		req.Header.Set(
-			k,
-			resolvedEndpoint.Headers.Get(k),
-		)
-	}
-
-	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
-	if err != nil {
-		var nfe *internalauth.NoAuthenticationSchemesFoundError
-		if errors.As(err, &nfe) {
-			// if no auth scheme is found, default to sigv4
-			signingName := "ec2"
-			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-
-		}
-		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
-		if errors.As(err, &ue) {
-			return out, metadata, fmt.Errorf(
-				"This operation requests signer version(s) %v but the client only supports %v",
-				ue.UnsupportedSchemes,
-				internalauth.SupportedSchemes,
-			)
-		}
-	}
-
-	for _, authScheme := range authSchemes {
-		switch authScheme.(type) {
-		case *internalauth.AuthenticationSchemeV4:
-			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
-			var signingName, signingRegion string
-			if v4Scheme.SigningName == nil {
-				signingName = "ec2"
-			} else {
-				signingName = *v4Scheme.SigningName
-			}
-			if v4Scheme.SigningRegion == nil {
-				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
-			} else {
-				signingRegion = *v4Scheme.SigningRegion
-			}
-			if v4Scheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-			break
-		case *internalauth.AuthenticationSchemeV4A:
-			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
-			if v4aScheme.SigningName == nil {
-				v4aScheme.SigningName = aws.String("ec2")
-			}
-			if v4aScheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
-			break
-		case *internalauth.AuthenticationSchemeNone:
-			break
-		}
-	}
-
-	return next.HandleSerialize(ctx, in)
-}
-
-func addCreateVolumeResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
-	return stack.Serialize.Insert(&opCreateVolumeResolveEndpointMiddleware{
-		EndpointResolver: options.EndpointResolverV2,
-		BuiltInResolver: &builtInResolver{
-			Region:       options.Region,
-			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
-			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
-			Endpoint:     options.BaseEndpoint,
-		},
-	}, "ResolveEndpoint", middleware.After)
 }

@@ -4,51 +4,59 @@ package route53
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
-	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
-	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Deletes a hosted zone. If the hosted zone was created by another service, such
-// as Cloud Map, see Deleting Public Hosted Zones That Were Created by Another
-// Service (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DeleteHostedZone.html#delete-public-hosted-zone-created-by-another-service)
-// in the Amazon Route 53 Developer Guide for information about how to delete it.
-// (The process is the same for public and private hosted zones that were created
-// by another service.) If you want to keep your domain registration but you want
-// to stop routing internet traffic to your website or web application, we
-// recommend that you delete resource record sets in the hosted zone instead of
-// deleting the hosted zone. If you delete a hosted zone, you can't undelete it.
-// You must create a new hosted zone and update the name servers for your domain
-// registration, which can require up to 48 hours to take effect. (If you delegated
-// responsibility for a subdomain to a hosted zone and you delete the child hosted
-// zone, you must update the name servers in the parent hosted zone.) In addition,
-// if you delete a hosted zone, someone could hijack the domain and route traffic
-// to their own resources using your domain name. If you want to avoid the monthly
-// charge for the hosted zone, you can transfer DNS service for the domain to a
-// free DNS service. When you transfer DNS service, you have to update the name
-// servers for the domain registration. If the domain is registered with Route 53,
-// see UpdateDomainNameservers (https://docs.aws.amazon.com/Route53/latest/APIReference/API_domains_UpdateDomainNameservers.html)
-// for information about how to replace Route 53 name servers with name servers for
-// the new DNS service. If the domain is registered with another registrar, use the
-// method provided by the registrar to update name servers for the domain
-// registration. For more information, perform an internet search on "free DNS
-// service." You can delete a hosted zone only if it contains only the default SOA
-// record and NS resource record sets. If the hosted zone contains other resource
-// record sets, you must delete them before you can delete the hosted zone. If you
-// try to delete a hosted zone that contains other resource record sets, the
-// request fails, and Route 53 returns a HostedZoneNotEmpty error. For information
-// about deleting records from your hosted zone, see ChangeResourceRecordSets (https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html)
-// . To verify that the hosted zone has been deleted, do one of the following:
+// Deletes a hosted zone.
+//
+// If the hosted zone was created by another service, such as Cloud Map, see [Deleting Public Hosted Zones That Were Created by Another Service] in
+// the Amazon Route 53 Developer Guide for information about how to delete it. (The
+// process is the same for public and private hosted zones that were created by
+// another service.)
+//
+// If you want to keep your domain registration but you want to stop routing
+// internet traffic to your website or web application, we recommend that you
+// delete resource record sets in the hosted zone instead of deleting the hosted
+// zone.
+//
+// If you delete a hosted zone, you can't undelete it. You must create a new
+// hosted zone and update the name servers for your domain registration, which can
+// require up to 48 hours to take effect. (If you delegated responsibility for a
+// subdomain to a hosted zone and you delete the child hosted zone, you must update
+// the name servers in the parent hosted zone.) In addition, if you delete a hosted
+// zone, someone could hijack the domain and route traffic to their own resources
+// using your domain name.
+//
+// If you want to avoid the monthly charge for the hosted zone, you can transfer
+// DNS service for the domain to a free DNS service. When you transfer DNS service,
+// you have to update the name servers for the domain registration. If the domain
+// is registered with Route 53, see [UpdateDomainNameservers]for information about how to replace Route 53
+// name servers with name servers for the new DNS service. If the domain is
+// registered with another registrar, use the method provided by the registrar to
+// update name servers for the domain registration. For more information, perform
+// an internet search on "free DNS service."
+//
+// You can delete a hosted zone only if it contains only the default SOA record
+// and NS resource record sets. If the hosted zone contains other resource record
+// sets, you must delete them before you can delete the hosted zone. If you try to
+// delete a hosted zone that contains other resource record sets, the request
+// fails, and Route 53 returns a HostedZoneNotEmpty error. For information about
+// deleting records from your hosted zone, see [ChangeResourceRecordSets].
+//
+// To verify that the hosted zone has been deleted, do one of the following:
+//
 //   - Use the GetHostedZone action to request information about the hosted zone.
+//
 //   - Use the ListHostedZones action to get a list of the hosted zones associated
 //     with the current Amazon Web Services account.
+//
+// [ChangeResourceRecordSets]: https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html
+// [Deleting Public Hosted Zones That Were Created by Another Service]: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DeleteHostedZone.html#delete-public-hosted-zone-created-by-another-service
+// [UpdateDomainNameservers]: https://docs.aws.amazon.com/Route53/latest/APIReference/API_domains_UpdateDomainNameservers.html
 func (c *Client) DeleteHostedZone(ctx context.Context, params *DeleteHostedZoneInput, optFns ...func(*Options)) (*DeleteHostedZoneOutput, error) {
 	if params == nil {
 		params = &DeleteHostedZoneInput{}
@@ -91,6 +99,9 @@ type DeleteHostedZoneOutput struct {
 }
 
 func (c *Client) addOperationDeleteHostedZoneMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
+		return err
+	}
 	err = stack.Serialize.Add(&awsRestxml_serializeOpDeleteHostedZone{}, middleware.After)
 	if err != nil {
 		return err
@@ -99,34 +110,38 @@ func (c *Client) addOperationDeleteHostedZoneMiddlewares(stack *middleware.Stack
 	if err != nil {
 		return err
 	}
+	if err := addProtocolFinalizerMiddlewares(stack, options, "DeleteHostedZone"); err != nil {
+		return fmt.Errorf("add protocol finalizers: %v", err)
+	}
+
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddClientRequestIDMiddleware(stack); err != nil {
+	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddComputeContentLengthMiddleware(stack); err != nil {
+	if err = addComputeContentLength(stack); err != nil {
 		return err
 	}
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = v4.AddComputePayloadSHA256Middleware(stack); err != nil {
+	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetryMiddlewares(stack, options); err != nil {
+	if err = addRetry(stack, options); err != nil {
 		return err
 	}
-	if err = addHTTPSignerV4Middleware(stack, options); err != nil {
+	if err = addRawResponseToMetadata(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRawResponseToMetadata(stack); err != nil {
+	if err = addRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
+	if err = addSpanRetryLoop(stack, options); err != nil {
 		return err
 	}
 	if err = addClientUserAgent(stack, options); err != nil {
@@ -138,7 +153,13 @@ func (c *Client) addOperationDeleteHostedZoneMiddlewares(stack *middleware.Stack
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addDeleteHostedZoneResolveEndpointMiddleware(stack, options); err != nil {
+	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addTimeOffsetBuild(stack, c); err != nil {
+		return err
+	}
+	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
 	if err = addOpDeleteHostedZoneValidationMiddleware(stack); err != nil {
@@ -147,7 +168,7 @@ func (c *Client) addOperationDeleteHostedZoneMiddlewares(stack *middleware.Stack
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opDeleteHostedZone(options.Region), middleware.Before); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
+	if err = addRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -162,7 +183,19 @@ func (c *Client) addOperationDeleteHostedZoneMiddlewares(stack *middleware.Stack
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
-	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
+	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
+	}
+	if err = addSpanInitializeStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanInitializeEnd(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil
@@ -172,130 +205,6 @@ func newServiceMetadataMiddleware_opDeleteHostedZone(region string) *awsmiddlewa
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
-		SigningName:   "route53",
 		OperationName: "DeleteHostedZone",
 	}
-}
-
-type opDeleteHostedZoneResolveEndpointMiddleware struct {
-	EndpointResolver EndpointResolverV2
-	BuiltInResolver  builtInParameterResolver
-}
-
-func (*opDeleteHostedZoneResolveEndpointMiddleware) ID() string {
-	return "ResolveEndpointV2"
-}
-
-func (m *opDeleteHostedZoneResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
-	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
-) {
-	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
-		return next.HandleSerialize(ctx, in)
-	}
-
-	req, ok := in.Request.(*smithyhttp.Request)
-	if !ok {
-		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
-	}
-
-	if m.EndpointResolver == nil {
-		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
-	}
-
-	params := EndpointParameters{}
-
-	m.BuiltInResolver.ResolveBuiltIns(&params)
-
-	var resolvedEndpoint smithyendpoints.Endpoint
-	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
-	if err != nil {
-		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
-	}
-
-	req.URL = &resolvedEndpoint.URI
-
-	for k := range resolvedEndpoint.Headers {
-		req.Header.Set(
-			k,
-			resolvedEndpoint.Headers.Get(k),
-		)
-	}
-
-	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
-	if err != nil {
-		var nfe *internalauth.NoAuthenticationSchemesFoundError
-		if errors.As(err, &nfe) {
-			// if no auth scheme is found, default to sigv4
-			signingName := "route53"
-			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-
-		}
-		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
-		if errors.As(err, &ue) {
-			return out, metadata, fmt.Errorf(
-				"This operation requests signer version(s) %v but the client only supports %v",
-				ue.UnsupportedSchemes,
-				internalauth.SupportedSchemes,
-			)
-		}
-	}
-
-	for _, authScheme := range authSchemes {
-		switch authScheme.(type) {
-		case *internalauth.AuthenticationSchemeV4:
-			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
-			var signingName, signingRegion string
-			if v4Scheme.SigningName == nil {
-				signingName = "route53"
-			} else {
-				signingName = *v4Scheme.SigningName
-			}
-			if v4Scheme.SigningRegion == nil {
-				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
-			} else {
-				signingRegion = *v4Scheme.SigningRegion
-			}
-			if v4Scheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-			break
-		case *internalauth.AuthenticationSchemeV4A:
-			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
-			if v4aScheme.SigningName == nil {
-				v4aScheme.SigningName = aws.String("route53")
-			}
-			if v4aScheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
-			break
-		case *internalauth.AuthenticationSchemeNone:
-			break
-		}
-	}
-
-	return next.HandleSerialize(ctx, in)
-}
-
-func addDeleteHostedZoneResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
-	return stack.Serialize.Insert(&opDeleteHostedZoneResolveEndpointMiddleware{
-		EndpointResolver: options.EndpointResolverV2,
-		BuiltInResolver: &builtInResolver{
-			Region:       options.Region,
-			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
-			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
-			Endpoint:     options.BaseEndpoint,
-		},
-	}, "ResolveEndpoint", middleware.After)
 }
