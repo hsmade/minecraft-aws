@@ -4,14 +4,9 @@ package route53
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
-	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
-	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
@@ -21,39 +16,58 @@ import (
 // domain, such as example.com, and its subdomains (apex.example.com,
 // acme.example.com). You create records in a private hosted zone to define how you
 // want to route traffic for a domain and its subdomains within one or more Amazon
-// Virtual Private Clouds (Amazon VPCs). You can't convert a public hosted zone to
-// a private hosted zone or vice versa. Instead, you must create a new hosted zone
-// with the same name and create new resource record sets. For more information
-// about charges for hosted zones, see Amazon Route 53 Pricing (http://aws.amazon.com/route53/pricing/)
-// . Note the following:
+// Virtual Private Clouds (Amazon VPCs).
+//
+// You can't convert a public hosted zone to a private hosted zone or vice versa.
+// Instead, you must create a new hosted zone with the same name and create new
+// resource record sets.
+//
+// For more information about charges for hosted zones, see [Amazon Route 53 Pricing].
+//
+// Note the following:
+//
 //   - You can't create a hosted zone for a top-level domain (TLD) such as .com.
+//
 //   - For public hosted zones, Route 53 automatically creates a default SOA
 //     record and four NS records for the zone. For more information about SOA and NS
-//     records, see NS and SOA Records that Route 53 Creates for a Hosted Zone (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/SOA-NSrecords.html)
-//     in the Amazon Route 53 Developer Guide. If you want to use the same name servers
-//     for multiple public hosted zones, you can optionally associate a reusable
-//     delegation set with the hosted zone. See the DelegationSetId element.
-//   - If your domain is registered with a registrar other than Route 53, you must
-//     update the name servers with your registrar to make Route 53 the DNS service for
-//     the domain. For more information, see Migrating DNS Service for an Existing
-//     Domain to Amazon Route 53 (https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/MigratingDNS.html)
-//     in the Amazon Route 53 Developer Guide.
+//     records, see [NS and SOA Records that Route 53 Creates for a Hosted Zone]in the Amazon Route 53 Developer Guide.
+//
+// If you want to use the same name servers for multiple public hosted zones, you
+//
+//	can optionally associate a reusable delegation set with the hosted zone. See the
+//	DelegationSetId element.
+//
+//	- If your domain is registered with a registrar other than Route 53, you must
+//	update the name servers with your registrar to make Route 53 the DNS service for
+//	the domain. For more information, see [Migrating DNS Service for an Existing Domain to Amazon Route 53]in the Amazon Route 53 Developer Guide.
 //
 // When you submit a CreateHostedZone request, the initial status of the hosted
 // zone is PENDING . For public hosted zones, this means that the NS and SOA
 // records are not yet available on all Route 53 DNS servers. When the NS and SOA
-// records are available, the status of the zone changes to INSYNC . The
-// CreateHostedZone request requires the caller to have an ec2:DescribeVpcs
-// permission. When creating private hosted zones, the Amazon VPC must belong to
-// the same partition where the hosted zone is created. A partition is a group of
-// Amazon Web Services Regions. Each Amazon Web Services account is scoped to one
-// partition. The following are the supported partitions:
+// records are available, the status of the zone changes to INSYNC .
+//
+// The CreateHostedZone request requires the caller to have an ec2:DescribeVpcs
+// permission.
+//
+// When creating private hosted zones, the Amazon VPC must belong to the same
+// partition where the hosted zone is created. A partition is a group of Amazon Web
+// Services Regions. Each Amazon Web Services account is scoped to one partition.
+//
+// The following are the supported partitions:
+//
 //   - aws - Amazon Web Services Regions
+//
 //   - aws-cn - China Regions
+//
 //   - aws-us-gov - Amazon Web Services GovCloud (US) Region
 //
-// For more information, see Access Management (https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html)
-// in the Amazon Web Services General Reference.
+// For more information, see [Access Management] in the Amazon Web Services General Reference.
+//
+// [Access Management]: https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
+// [NS and SOA Records that Route 53 Creates for a Hosted Zone]: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/SOA-NSrecords.html
+// [Amazon Route 53 Pricing]: http://aws.amazon.com/route53/pricing/
+//
+// [Migrating DNS Service for an Existing Domain to Amazon Route 53]: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/MigratingDNS.html
 func (c *Client) CreateHostedZone(ctx context.Context, params *CreateHostedZoneInput, optFns ...func(*Options)) (*CreateHostedZoneOutput, error) {
 	if params == nil {
 		params = &CreateHostedZoneInput{}
@@ -86,38 +100,49 @@ type CreateHostedZoneInput struct {
 	// www.example.com. The trailing dot is optional; Amazon Route 53 assumes that the
 	// domain name is fully qualified. This means that Route 53 treats www.example.com
 	// (without a trailing dot) and www.example.com. (with a trailing dot) as
-	// identical. If you're creating a public hosted zone, this is the name you have
-	// registered with your DNS registrar. If your domain name is registered with a
-	// registrar other than Route 53, change the name servers for your domain to the
-	// set of NameServers that CreateHostedZone returns in DelegationSet .
+	// identical.
+	//
+	// If you're creating a public hosted zone, this is the name you have registered
+	// with your DNS registrar. If your domain name is registered with a registrar
+	// other than Route 53, change the name servers for your domain to the set of
+	// NameServers that CreateHostedZone returns in DelegationSet .
 	//
 	// This member is required.
 	Name *string
 
 	// If you want to associate a reusable delegation set with this hosted zone, the
 	// ID that Amazon Route 53 assigned to the reusable delegation set when you created
-	// it. For more information about reusable delegation sets, see
-	// CreateReusableDelegationSet (https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateReusableDelegationSet.html)
-	// . If you are using a reusable delegation set to create a public hosted zone for
-	// a subdomain, make sure that the parent hosted zone doesn't use one or more of
-	// the same name servers. If you have overlapping nameservers, the operation will
-	// cause a ConflictingDomainsExist error.
+	// it. For more information about reusable delegation sets, see [CreateReusableDelegationSet].
+	//
+	// If you are using a reusable delegation set to create a public hosted zone for a
+	// subdomain, make sure that the parent hosted zone doesn't use one or more of the
+	// same name servers. If you have overlapping nameservers, the operation will cause
+	// a ConflictingDomainsExist error.
+	//
+	// [CreateReusableDelegationSet]: https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateReusableDelegationSet.html
 	DelegationSetId *string
 
 	// (Optional) A complex type that contains the following optional values:
+	//
 	//   - For public and private hosted zones, an optional comment
+	//
 	//   - For private hosted zones, an optional PrivateZone element
+	//
 	// If you don't specify a comment or the PrivateZone element, omit HostedZoneConfig
 	// and the other elements.
 	HostedZoneConfig *types.HostedZoneConfig
 
 	// (Private hosted zones only) A complex type that contains information about the
-	// Amazon VPC that you're associating with this hosted zone. You can specify only
-	// one Amazon VPC when you create a private hosted zone. If you are associating a
-	// VPC with a hosted zone with this request, the paramaters VPCId and VPCRegion
-	// are also required. To associate additional Amazon VPCs with the hosted zone, use
-	// AssociateVPCWithHostedZone (https://docs.aws.amazon.com/Route53/latest/APIReference/API_AssociateVPCWithHostedZone.html)
-	// after you create a hosted zone.
+	// Amazon VPC that you're associating with this hosted zone.
+	//
+	// You can specify only one Amazon VPC when you create a private hosted zone. If
+	// you are associating a VPC with a hosted zone with this request, the paramaters
+	// VPCId and VPCRegion are also required.
+	//
+	// To associate additional Amazon VPCs with the hosted zone, use [AssociateVPCWithHostedZone] after you create
+	// a hosted zone.
+	//
+	// [AssociateVPCWithHostedZone]: https://docs.aws.amazon.com/Route53/latest/APIReference/API_AssociateVPCWithHostedZone.html
 	VPC *types.VPC
 
 	noSmithyDocumentSerde
@@ -157,6 +182,9 @@ type CreateHostedZoneOutput struct {
 }
 
 func (c *Client) addOperationCreateHostedZoneMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
+		return err
+	}
 	err = stack.Serialize.Add(&awsRestxml_serializeOpCreateHostedZone{}, middleware.After)
 	if err != nil {
 		return err
@@ -165,34 +193,38 @@ func (c *Client) addOperationCreateHostedZoneMiddlewares(stack *middleware.Stack
 	if err != nil {
 		return err
 	}
+	if err := addProtocolFinalizerMiddlewares(stack, options, "CreateHostedZone"); err != nil {
+		return fmt.Errorf("add protocol finalizers: %v", err)
+	}
+
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddClientRequestIDMiddleware(stack); err != nil {
+	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddComputeContentLengthMiddleware(stack); err != nil {
+	if err = addComputeContentLength(stack); err != nil {
 		return err
 	}
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = v4.AddComputePayloadSHA256Middleware(stack); err != nil {
+	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetryMiddlewares(stack, options); err != nil {
+	if err = addRetry(stack, options); err != nil {
 		return err
 	}
-	if err = addHTTPSignerV4Middleware(stack, options); err != nil {
+	if err = addRawResponseToMetadata(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRawResponseToMetadata(stack); err != nil {
+	if err = addRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
+	if err = addSpanRetryLoop(stack, options); err != nil {
 		return err
 	}
 	if err = addClientUserAgent(stack, options); err != nil {
@@ -204,7 +236,13 @@ func (c *Client) addOperationCreateHostedZoneMiddlewares(stack *middleware.Stack
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addCreateHostedZoneResolveEndpointMiddleware(stack, options); err != nil {
+	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addTimeOffsetBuild(stack, c); err != nil {
+		return err
+	}
+	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
 	if err = addOpCreateHostedZoneValidationMiddleware(stack); err != nil {
@@ -213,7 +251,7 @@ func (c *Client) addOperationCreateHostedZoneMiddlewares(stack *middleware.Stack
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opCreateHostedZone(options.Region), middleware.Before); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
+	if err = addRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -228,7 +266,19 @@ func (c *Client) addOperationCreateHostedZoneMiddlewares(stack *middleware.Stack
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
-	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
+	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
+	}
+	if err = addSpanInitializeStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanInitializeEnd(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil
@@ -238,130 +288,6 @@ func newServiceMetadataMiddleware_opCreateHostedZone(region string) *awsmiddlewa
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
-		SigningName:   "route53",
 		OperationName: "CreateHostedZone",
 	}
-}
-
-type opCreateHostedZoneResolveEndpointMiddleware struct {
-	EndpointResolver EndpointResolverV2
-	BuiltInResolver  builtInParameterResolver
-}
-
-func (*opCreateHostedZoneResolveEndpointMiddleware) ID() string {
-	return "ResolveEndpointV2"
-}
-
-func (m *opCreateHostedZoneResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
-	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
-) {
-	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
-		return next.HandleSerialize(ctx, in)
-	}
-
-	req, ok := in.Request.(*smithyhttp.Request)
-	if !ok {
-		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
-	}
-
-	if m.EndpointResolver == nil {
-		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
-	}
-
-	params := EndpointParameters{}
-
-	m.BuiltInResolver.ResolveBuiltIns(&params)
-
-	var resolvedEndpoint smithyendpoints.Endpoint
-	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
-	if err != nil {
-		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
-	}
-
-	req.URL = &resolvedEndpoint.URI
-
-	for k := range resolvedEndpoint.Headers {
-		req.Header.Set(
-			k,
-			resolvedEndpoint.Headers.Get(k),
-		)
-	}
-
-	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
-	if err != nil {
-		var nfe *internalauth.NoAuthenticationSchemesFoundError
-		if errors.As(err, &nfe) {
-			// if no auth scheme is found, default to sigv4
-			signingName := "route53"
-			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-
-		}
-		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
-		if errors.As(err, &ue) {
-			return out, metadata, fmt.Errorf(
-				"This operation requests signer version(s) %v but the client only supports %v",
-				ue.UnsupportedSchemes,
-				internalauth.SupportedSchemes,
-			)
-		}
-	}
-
-	for _, authScheme := range authSchemes {
-		switch authScheme.(type) {
-		case *internalauth.AuthenticationSchemeV4:
-			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
-			var signingName, signingRegion string
-			if v4Scheme.SigningName == nil {
-				signingName = "route53"
-			} else {
-				signingName = *v4Scheme.SigningName
-			}
-			if v4Scheme.SigningRegion == nil {
-				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
-			} else {
-				signingRegion = *v4Scheme.SigningRegion
-			}
-			if v4Scheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-			break
-		case *internalauth.AuthenticationSchemeV4A:
-			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
-			if v4aScheme.SigningName == nil {
-				v4aScheme.SigningName = aws.String("route53")
-			}
-			if v4aScheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
-			break
-		case *internalauth.AuthenticationSchemeNone:
-			break
-		}
-	}
-
-	return next.HandleSerialize(ctx, in)
-}
-
-func addCreateHostedZoneResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
-	return stack.Serialize.Insert(&opCreateHostedZoneResolveEndpointMiddleware{
-		EndpointResolver: options.EndpointResolverV2,
-		BuiltInResolver: &builtInResolver{
-			Region:       options.Region,
-			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
-			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
-			Endpoint:     options.BaseEndpoint,
-		},
-	}, "ResolveEndpoint", middleware.After)
 }

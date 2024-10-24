@@ -4,24 +4,22 @@ package ec2
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
-	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	internalauth "github.com/aws/aws-sdk-go-v2/internal/auth"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Creates a network interface in the specified subnet. The number of IP addresses
-// you can assign to a network interface varies by instance type. For more
-// information, see IP Addresses Per ENI Per Instance Type (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html#AvailableIpPerENI)
-// in the Amazon Virtual Private Cloud User Guide. For more information about
-// network interfaces, see Elastic network interfaces (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// Creates a network interface in the specified subnet.
+//
+// The number of IP addresses you can assign to a network interface varies by
+// instance type.
+//
+// For more information about network interfaces, see [Elastic network interfaces] in the Amazon EC2 User
+// Guide.
+//
+// [Elastic network interfaces]: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html
 func (c *Client) CreateNetworkInterface(ctx context.Context, params *CreateNetworkInterfaceInput, optFns ...func(*Options)) (*CreateNetworkInterfaceOutput, error) {
 	if params == nil {
 		params = &CreateNetworkInterfaceInput{}
@@ -45,9 +43,13 @@ type CreateNetworkInterfaceInput struct {
 	SubnetId *string
 
 	// Unique, case-sensitive identifier that you provide to ensure the idempotency of
-	// the request. For more information, see Ensuring Idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html)
-	// .
+	// the request. For more information, see [Ensuring idempotency].
+	//
+	// [Ensuring idempotency]: https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html
 	ClientToken *string
+
+	// A connection tracking specification for the network interface.
+	ConnectionTrackingSpecification *types.ConnectionTrackingSpecificationRequest
 
 	// A description for the network interface.
 	Description *string
@@ -76,44 +78,56 @@ type CreateNetworkInterfaceInput struct {
 	// The IDs of one or more security groups.
 	Groups []string
 
-	// The type of network interface. The default is interface . The only supported
-	// values are interface , efa , and trunk .
+	// The type of network interface. The default is interface .
+	//
+	// The only supported values are interface , efa , and trunk .
 	InterfaceType types.NetworkInterfaceCreationType
 
 	// The number of IPv4 prefixes that Amazon Web Services automatically assigns to
-	// the network interface. You can't specify a count of IPv4 prefixes if you've
-	// specified one of the following: specific IPv4 prefixes, specific private IPv4
-	// addresses, or a count of private IPv4 addresses.
+	// the network interface.
+	//
+	// You can't specify a count of IPv4 prefixes if you've specified one of the
+	// following: specific IPv4 prefixes, specific private IPv4 addresses, or a count
+	// of private IPv4 addresses.
 	Ipv4PrefixCount *int32
 
-	// The IPv4 prefixes assigned to the network interface. You can't specify IPv4
-	// prefixes if you've specified one of the following: a count of IPv4 prefixes,
-	// specific private IPv4 addresses, or a count of private IPv4 addresses.
+	// The IPv4 prefixes assigned to the network interface.
+	//
+	// You can't specify IPv4 prefixes if you've specified one of the following: a
+	// count of IPv4 prefixes, specific private IPv4 addresses, or a count of private
+	// IPv4 addresses.
 	Ipv4Prefixes []types.Ipv4PrefixSpecificationRequest
 
 	// The number of IPv6 addresses to assign to a network interface. Amazon EC2
-	// automatically selects the IPv6 addresses from the subnet range. You can't
-	// specify a count of IPv6 addresses using this parameter if you've specified one
-	// of the following: specific IPv6 addresses, specific IPv6 prefixes, or a count of
-	// IPv6 prefixes. If your subnet has the AssignIpv6AddressOnCreation attribute
-	// set, you can override that setting by specifying 0 as the IPv6 address count.
+	// automatically selects the IPv6 addresses from the subnet range.
+	//
+	// You can't specify a count of IPv6 addresses using this parameter if you've
+	// specified one of the following: specific IPv6 addresses, specific IPv6 prefixes,
+	// or a count of IPv6 prefixes.
+	//
+	// If your subnet has the AssignIpv6AddressOnCreation attribute set, you can
+	// override that setting by specifying 0 as the IPv6 address count.
 	Ipv6AddressCount *int32
 
-	// The IPv6 addresses from the IPv6 CIDR block range of your subnet. You can't
-	// specify IPv6 addresses using this parameter if you've specified one of the
-	// following: a count of IPv6 addresses, specific IPv6 prefixes, or a count of IPv6
-	// prefixes.
+	// The IPv6 addresses from the IPv6 CIDR block range of your subnet.
+	//
+	// You can't specify IPv6 addresses using this parameter if you've specified one
+	// of the following: a count of IPv6 addresses, specific IPv6 prefixes, or a count
+	// of IPv6 prefixes.
 	Ipv6Addresses []types.InstanceIpv6Address
 
 	// The number of IPv6 prefixes that Amazon Web Services automatically assigns to
-	// the network interface. You can't specify a count of IPv6 prefixes if you've
-	// specified one of the following: specific IPv6 prefixes, specific IPv6 addresses,
-	// or a count of IPv6 addresses.
+	// the network interface.
+	//
+	// You can't specify a count of IPv6 prefixes if you've specified one of the
+	// following: specific IPv6 prefixes, specific IPv6 addresses, or a count of IPv6
+	// addresses.
 	Ipv6PrefixCount *int32
 
-	// The IPv6 prefixes assigned to the network interface. You can't specify IPv6
-	// prefixes if you've specified one of the following: a count of IPv6 prefixes,
-	// specific IPv6 addresses, or a count of IPv6 addresses.
+	// The IPv6 prefixes assigned to the network interface.
+	//
+	// You can't specify IPv6 prefixes if you've specified one of the following: a
+	// count of IPv6 prefixes, specific IPv6 addresses, or a count of IPv6 addresses.
 	Ipv6Prefixes []types.Ipv6PrefixSpecificationRequest
 
 	// The primary private IPv4 address of the network interface. If you don't specify
@@ -123,18 +137,22 @@ type CreateNetworkInterfaceInput struct {
 	// designated as primary).
 	PrivateIpAddress *string
 
-	// The private IPv4 addresses. You can't specify private IPv4 addresses if you've
-	// specified one of the following: a count of private IPv4 addresses, specific IPv4
-	// prefixes, or a count of IPv4 prefixes.
+	// The private IPv4 addresses.
+	//
+	// You can't specify private IPv4 addresses if you've specified one of the
+	// following: a count of private IPv4 addresses, specific IPv4 prefixes, or a count
+	// of IPv4 prefixes.
 	PrivateIpAddresses []types.PrivateIpAddressSpecification
 
 	// The number of secondary private IPv4 addresses to assign to a network
 	// interface. When you specify a number of secondary IPv4 addresses, Amazon EC2
 	// selects these IP addresses within the subnet's IPv4 CIDR range. You can't
 	// specify this option and specify more than one private IP address using
-	// privateIpAddresses . You can't specify a count of private IPv4 addresses if
-	// you've specified one of the following: specific private IPv4 addresses, specific
-	// IPv4 prefixes, or a count of IPv4 prefixes.
+	// privateIpAddresses .
+	//
+	// You can't specify a count of private IPv4 addresses if you've specified one of
+	// the following: specific private IPv4 addresses, specific IPv4 prefixes, or a
+	// count of IPv4 prefixes.
 	SecondaryPrivateIpAddressCount *int32
 
 	// The tags to apply to the new network interface.
@@ -159,6 +177,9 @@ type CreateNetworkInterfaceOutput struct {
 }
 
 func (c *Client) addOperationCreateNetworkInterfaceMiddlewares(stack *middleware.Stack, options Options) (err error) {
+	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
+		return err
+	}
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateNetworkInterface{}, middleware.After)
 	if err != nil {
 		return err
@@ -167,34 +188,38 @@ func (c *Client) addOperationCreateNetworkInterfaceMiddlewares(stack *middleware
 	if err != nil {
 		return err
 	}
+	if err := addProtocolFinalizerMiddlewares(stack, options, "CreateNetworkInterface"); err != nil {
+		return fmt.Errorf("add protocol finalizers: %v", err)
+	}
+
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
 		return err
 	}
 	if err = addSetLoggerMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddClientRequestIDMiddleware(stack); err != nil {
+	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddComputeContentLengthMiddleware(stack); err != nil {
+	if err = addComputeContentLength(stack); err != nil {
 		return err
 	}
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = v4.AddComputePayloadSHA256Middleware(stack); err != nil {
+	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetryMiddlewares(stack, options); err != nil {
+	if err = addRetry(stack, options); err != nil {
 		return err
 	}
-	if err = addHTTPSignerV4Middleware(stack, options); err != nil {
+	if err = addRawResponseToMetadata(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRawResponseToMetadata(stack); err != nil {
+	if err = addRecordResponseTiming(stack); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
+	if err = addSpanRetryLoop(stack, options); err != nil {
 		return err
 	}
 	if err = addClientUserAgent(stack, options); err != nil {
@@ -206,7 +231,13 @@ func (c *Client) addOperationCreateNetworkInterfaceMiddlewares(stack *middleware
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
-	if err = addCreateNetworkInterfaceResolveEndpointMiddleware(stack, options); err != nil {
+	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addTimeOffsetBuild(stack, c); err != nil {
+		return err
+	}
+	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
 	if err = addIdempotencyToken_opCreateNetworkInterfaceMiddleware(stack, options); err != nil {
@@ -218,7 +249,7 @@ func (c *Client) addOperationCreateNetworkInterfaceMiddlewares(stack *middleware
 	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opCreateNetworkInterface(options.Region), middleware.Before); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
+	if err = addRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -230,7 +261,19 @@ func (c *Client) addOperationCreateNetworkInterfaceMiddlewares(stack *middleware
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
-	if err = addendpointDisableHTTPSMiddleware(stack, options); err != nil {
+	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
+	}
+	if err = addSpanInitializeStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanInitializeEnd(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestStart(stack); err != nil {
+		return err
+	}
+	if err = addSpanBuildRequestEnd(stack); err != nil {
 		return err
 	}
 	return nil
@@ -273,130 +316,6 @@ func newServiceMetadataMiddleware_opCreateNetworkInterface(region string) *awsmi
 	return &awsmiddleware.RegisterServiceMetadata{
 		Region:        region,
 		ServiceID:     ServiceID,
-		SigningName:   "ec2",
 		OperationName: "CreateNetworkInterface",
 	}
-}
-
-type opCreateNetworkInterfaceResolveEndpointMiddleware struct {
-	EndpointResolver EndpointResolverV2
-	BuiltInResolver  builtInParameterResolver
-}
-
-func (*opCreateNetworkInterfaceResolveEndpointMiddleware) ID() string {
-	return "ResolveEndpointV2"
-}
-
-func (m *opCreateNetworkInterfaceResolveEndpointMiddleware) HandleSerialize(ctx context.Context, in middleware.SerializeInput, next middleware.SerializeHandler) (
-	out middleware.SerializeOutput, metadata middleware.Metadata, err error,
-) {
-	if awsmiddleware.GetRequiresLegacyEndpoints(ctx) {
-		return next.HandleSerialize(ctx, in)
-	}
-
-	req, ok := in.Request.(*smithyhttp.Request)
-	if !ok {
-		return out, metadata, fmt.Errorf("unknown transport type %T", in.Request)
-	}
-
-	if m.EndpointResolver == nil {
-		return out, metadata, fmt.Errorf("expected endpoint resolver to not be nil")
-	}
-
-	params := EndpointParameters{}
-
-	m.BuiltInResolver.ResolveBuiltIns(&params)
-
-	var resolvedEndpoint smithyendpoints.Endpoint
-	resolvedEndpoint, err = m.EndpointResolver.ResolveEndpoint(ctx, params)
-	if err != nil {
-		return out, metadata, fmt.Errorf("failed to resolve service endpoint, %w", err)
-	}
-
-	req.URL = &resolvedEndpoint.URI
-
-	for k := range resolvedEndpoint.Headers {
-		req.Header.Set(
-			k,
-			resolvedEndpoint.Headers.Get(k),
-		)
-	}
-
-	authSchemes, err := internalauth.GetAuthenticationSchemes(&resolvedEndpoint.Properties)
-	if err != nil {
-		var nfe *internalauth.NoAuthenticationSchemesFoundError
-		if errors.As(err, &nfe) {
-			// if no auth scheme is found, default to sigv4
-			signingName := "ec2"
-			signingRegion := m.BuiltInResolver.(*builtInResolver).Region
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-
-		}
-		var ue *internalauth.UnSupportedAuthenticationSchemeSpecifiedError
-		if errors.As(err, &ue) {
-			return out, metadata, fmt.Errorf(
-				"This operation requests signer version(s) %v but the client only supports %v",
-				ue.UnsupportedSchemes,
-				internalauth.SupportedSchemes,
-			)
-		}
-	}
-
-	for _, authScheme := range authSchemes {
-		switch authScheme.(type) {
-		case *internalauth.AuthenticationSchemeV4:
-			v4Scheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4)
-			var signingName, signingRegion string
-			if v4Scheme.SigningName == nil {
-				signingName = "ec2"
-			} else {
-				signingName = *v4Scheme.SigningName
-			}
-			if v4Scheme.SigningRegion == nil {
-				signingRegion = m.BuiltInResolver.(*builtInResolver).Region
-			} else {
-				signingRegion = *v4Scheme.SigningRegion
-			}
-			if v4Scheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4Scheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, signingName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, signingRegion)
-			break
-		case *internalauth.AuthenticationSchemeV4A:
-			v4aScheme, _ := authScheme.(*internalauth.AuthenticationSchemeV4A)
-			if v4aScheme.SigningName == nil {
-				v4aScheme.SigningName = aws.String("ec2")
-			}
-			if v4aScheme.DisableDoubleEncoding != nil {
-				// The signer sets an equivalent value at client initialization time.
-				// Setting this context value will cause the signer to extract it
-				// and override the value set at client initialization time.
-				ctx = internalauth.SetDisableDoubleEncoding(ctx, *v4aScheme.DisableDoubleEncoding)
-			}
-			ctx = awsmiddleware.SetSigningName(ctx, *v4aScheme.SigningName)
-			ctx = awsmiddleware.SetSigningRegion(ctx, v4aScheme.SigningRegionSet[0])
-			break
-		case *internalauth.AuthenticationSchemeNone:
-			break
-		}
-	}
-
-	return next.HandleSerialize(ctx, in)
-}
-
-func addCreateNetworkInterfaceResolveEndpointMiddleware(stack *middleware.Stack, options Options) error {
-	return stack.Serialize.Insert(&opCreateNetworkInterfaceResolveEndpointMiddleware{
-		EndpointResolver: options.EndpointResolverV2,
-		BuiltInResolver: &builtInResolver{
-			Region:       options.Region,
-			UseDualStack: options.EndpointOptions.UseDualStackEndpoint,
-			UseFIPS:      options.EndpointOptions.UseFIPSEndpoint,
-			Endpoint:     options.BaseEndpoint,
-		},
-	}, "ResolveEndpoint", middleware.After)
 }
