@@ -4,9 +4,7 @@ package ssooidc
 
 import (
 	"context"
-	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/smithy-go/middleware"
-	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 // Initiates device authorization by requesting a pair of verification codes from
@@ -29,21 +27,22 @@ func (c *Client) StartDeviceAuthorization(ctx context.Context, params *StartDevi
 type StartDeviceAuthorizationInput struct {
 
 	// The unique identifier string for the client that is registered with IAM
-	// Identity Center. This value should come from the persisted result of the
-	// RegisterClient API operation.
+	// Identity Center. This value should come from the persisted result of the RegisterClientAPI
+	// operation.
 	//
 	// This member is required.
 	ClientId *string
 
 	// A secret string that is generated for the client. This value should come from
-	// the persisted result of the RegisterClient API operation.
+	// the persisted result of the RegisterClientAPI operation.
 	//
 	// This member is required.
 	ClientSecret *string
 
-	// The URL for the AWS access portal. For more information, see Using the AWS
-	// access portal (https://docs.aws.amazon.com/singlesignon/latest/userguide/using-the-portal.html)
+	// The URL for the Amazon Web Services access portal. For more information, see [Using the Amazon Web Services access portal]
 	// in the IAM Identity Center User Guide.
+	//
+	// [Using the Amazon Web Services access portal]: https://docs.aws.amazon.com/singlesignon/latest/userguide/using-the-portal.html
 	//
 	// This member is required.
 	StartUrl *string
@@ -92,43 +91,17 @@ func (c *Client) addOperationStartDeviceAuthorizationMiddlewares(stack *middlewa
 	if err != nil {
 		return err
 	}
-	if err = addSetLoggerMiddleware(stack, options); err != nil {
-		return err
-	}
-	if err = awsmiddleware.AddClientRequestIDMiddleware(stack); err != nil {
-		return err
-	}
-	if err = smithyhttp.AddComputeContentLengthMiddleware(stack); err != nil {
-		return err
-	}
+
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addRetryMiddlewares(stack, options); err != nil {
+	if err = addRecordResponseTiming(stack, options); err != nil {
 		return err
 	}
-	if err = awsmiddleware.AddRawResponseToMetadata(stack); err != nil {
-		return err
-	}
-	if err = awsmiddleware.AddRecordResponseTiming(stack); err != nil {
-		return err
-	}
-	if err = addClientUserAgent(stack); err != nil {
-		return err
-	}
-	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
-		return err
-	}
-	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
+	if err = addCredentialSource(stack, options); err != nil {
 		return err
 	}
 	if err = addOpStartDeviceAuthorizationValidationMiddleware(stack); err != nil {
-		return err
-	}
-	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opStartDeviceAuthorization(options.Region), middleware.Before); err != nil {
-		return err
-	}
-	if err = awsmiddleware.AddRecursionDetection(stack); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -140,13 +113,11 @@ func (c *Client) addOperationStartDeviceAuthorizationMiddlewares(stack *middlewa
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
-	return nil
-}
-
-func newServiceMetadataMiddleware_opStartDeviceAuthorization(region string) *awsmiddleware.RegisterServiceMetadata {
-	return &awsmiddleware.RegisterServiceMetadata{
-		Region:        region,
-		ServiceID:     ServiceID,
-		OperationName: "StartDeviceAuthorization",
+	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
+		return err
 	}
+	if err = addInterceptors(stack, options); err != nil {
+		return err
+	}
+	return nil
 }
