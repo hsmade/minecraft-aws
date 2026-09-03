@@ -15,6 +15,8 @@ type RegisterServiceMetadata struct {
 	SigningName   string
 	Region        string
 	OperationName string
+
+	RequiresLegacyEndpoints bool
 }
 
 // ID returns the middleware identifier.
@@ -33,10 +35,13 @@ func (s RegisterServiceMetadata) HandleInitialize(
 		ctx = SetSigningName(ctx, s.SigningName)
 	}
 	if len(s.Region) > 0 {
-		ctx = setRegion(ctx, s.Region)
+		ctx = SetRegion(ctx, s.Region)
 	}
 	if len(s.OperationName) > 0 {
-		ctx = setOperationName(ctx, s.OperationName)
+		ctx = SetOperationName(ctx, s.OperationName)
+	}
+	if s.RequiresLegacyEndpoints {
+		ctx = SetRequiresLegacyEndpoints(ctx, true)
 	}
 	return next.HandleInitialize(ctx, in)
 }
@@ -65,6 +70,9 @@ func GetServiceID(ctx context.Context) (v string) {
 //
 // Scoped to stack values. Use github.com/aws/smithy-go/middleware#ClearStackValues
 // to clear all stack values.
+//
+// Deprecated: This value is unstable. The resolved signing name is available
+// in the signer properties object passed to the signer.
 func GetSigningName(ctx context.Context) (v string) {
 	v, _ = middleware.GetStackValue(ctx, signingNameKey{}).(string)
 	return v
@@ -74,6 +82,9 @@ func GetSigningName(ctx context.Context) (v string) {
 //
 // Scoped to stack values. Use github.com/aws/smithy-go/middleware#ClearStackValues
 // to clear all stack values.
+//
+// Deprecated: This value is unstable. The resolved signing region is available
+// in the signer properties object passed to the signer.
 func GetSigningRegion(ctx context.Context) (v string) {
 	v, _ = middleware.GetStackValue(ctx, signingRegionKey{}).(string)
 	return v
@@ -125,10 +136,13 @@ func SetRequiresLegacyEndpoints(ctx context.Context, value bool) context.Context
 	return middleware.WithStackValue(ctx, requiresLegacyEndpointsKey{}, value)
 }
 
-// SetSigningName set or modifies the signing name on the context.
+// SetSigningName set or modifies the sigv4 or sigv4a signing name on the context.
 //
 // Scoped to stack values. Use github.com/aws/smithy-go/middleware#ClearStackValues
 // to clear all stack values.
+//
+// Deprecated: This value is unstable. Use WithSigV4SigningName client option
+// funcs instead.
 func SetSigningName(ctx context.Context, value string) context.Context {
 	return middleware.WithStackValue(ctx, signingNameKey{}, value)
 }
@@ -137,6 +151,9 @@ func SetSigningName(ctx context.Context, value string) context.Context {
 //
 // Scoped to stack values. Use github.com/aws/smithy-go/middleware#ClearStackValues
 // to clear all stack values.
+//
+// Deprecated: This value is unstable. Use WithSigV4SigningRegion client option
+// funcs instead.
 func SetSigningRegion(ctx context.Context, value string) context.Context {
 	return middleware.WithStackValue(ctx, signingRegionKey{}, value)
 }
@@ -149,19 +166,19 @@ func SetServiceID(ctx context.Context, value string) context.Context {
 	return middleware.WithStackValue(ctx, serviceIDKey{}, value)
 }
 
-// setRegion sets the endpoint region on the context.
+// SetRegion sets the endpoint region on the context.
 //
 // Scoped to stack values. Use github.com/aws/smithy-go/middleware#ClearStackValues
 // to clear all stack values.
-func setRegion(ctx context.Context, value string) context.Context {
+func SetRegion(ctx context.Context, value string) context.Context {
 	return middleware.WithStackValue(ctx, regionKey{}, value)
 }
 
-// setOperationName sets the service operation on the context.
+// SetOperationName sets the service operation on the context.
 //
 // Scoped to stack values. Use github.com/aws/smithy-go/middleware#ClearStackValues
 // to clear all stack values.
-func setOperationName(ctx context.Context, value string) context.Context {
+func SetOperationName(ctx context.Context, value string) context.Context {
 	return middleware.WithStackValue(ctx, operationNameKey{}, value)
 }
 
